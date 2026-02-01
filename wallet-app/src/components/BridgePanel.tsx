@@ -200,6 +200,41 @@ export function BridgePanel() {
         </div>
       </div>
 
+      {/* Bridge Bonus Banner */}
+      <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 rounded-lg p-4 mb-4">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">🎁</span>
+          <div>
+            <h4 className="font-bold text-white">Bridge Bonus!</h4>
+            <p className="text-xs text-purple-300">
+              Earn $BRIDGE tokens when you bridge from Base
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+          <div className="bg-black/30 rounded p-2">
+            <div className="text-gray-400">Silver</div>
+            <div className="text-white font-bold">0.01+ ETH</div>
+            <div className="text-purple-400">1x bonus</div>
+          </div>
+          <div className="bg-black/30 rounded p-2">
+            <div className="text-yellow-400">Gold</div>
+            <div className="text-white font-bold">0.1+ ETH</div>
+            <div className="text-purple-400">1.5x bonus</div>
+          </div>
+          <div className="bg-black/30 rounded p-2">
+            <div className="text-blue-400">Whale</div>
+            <div className="text-white font-bold">1+ ETH</div>
+            <div className="text-purple-400">2x bonus</div>
+          </div>
+        </div>
+        <div className="mt-2 text-center">
+          <span className="text-xs text-pink-400 animate-pulse">
+            ✨ Early Adopter Bonus: First 100 bridgers get 3x!
+          </span>
+        </div>
+      </div>
+
       {/* Bridge Button */}
       <button
         onClick={handleBridgeClick}
