@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>THRYX Explorer - AI-Native Blockchain</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes slideIn {
+      from { transform: translateX(-20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .slide-in { animation: slideIn 0.3s ease-out; }
+    .gradient-text {
+      background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    body {
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0f0f1a 100%);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-white">
+  <!-- Header -->
+  <header class="border-b border-purple-500/20 bg-black/30 backdrop-blur-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold gradient-text">THRYX</h1>
+          <p class="text-purple-300/60 text-sm">AI-Native Blockchain</p>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-green-400 pulse"></div>
+            <span class="text-green-400 text-sm font-medium" id="connectionStatus">Connecting...</span>
+          </div>
+          <div class="bg-purple-500/20 px-3 py-1 rounded-full text-purple-300 text-sm">
+            Chain ID: 31337
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Stats Grid -->
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border border-purple-500/20 rounded-xl p-4">
+        <div class="text-purple-300/60 text-xs uppercase tracking-wider mb-1">Latest Block</div>
+        <div class="text-2xl font-bold" id="blockNumber">-</div>
+      </div>
+      <div class="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border border-purple-500/20 rounded-xl p-4">
+        <div class="text-purple-300/60 text-xs uppercase tracking-wider mb-1">Total Transactions</div>
+        <div class="text-2xl font-bold" id="totalTx">-</div>
+      </div>
+      <div class="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border border-purple-500/20 rounded-xl p-4">
+        <div class="text-purple-300/60 text-xs uppercase tracking-wider mb-1">Active AI Agents</div>
+        <div class="text-2xl font-bold text-green-400" id="activeAgents">6</div>
+      </div>
+      <div class="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border border-purple-500/20 rounded-xl p-4">
+        <div class="text-purple-300/60 text-xs uppercase tracking-wider mb-1">Gas Price</div>
+        <div class="text-2xl font-bold" id="gasPrice">-</div>
+      </div>
+    </div>
+
+    <!-- AI Agents Status -->
+    <div class="bg-gradient-to-br from-purple-500/5 to-indigo-500/5 border border-purple-500/20 rounded-xl p-6 mb-8">
+      <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+        <span class="text-2xl">🤖</span> AI Agents Operating
+      </h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4" id="agentGrid">
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-2xl mb-1">📊</div>
+          <div class="text-sm font-medium">Oracle</div>
+          <div class="text-xs text-green-400">Active</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-2xl mb-1">💱</div>
+          <div class="text-sm font-medium">Arbitrage</div>
+          <div class="text-xs text-green-400">Active</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-2xl mb-1">💧</div>
+          <div class="text-sm font-medium">Liquidity</div>
+          <div class="text-xs text-green-400">Active</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-2xl mb-1">🏛️</div>
+          <div class="text-sm font-medium">Governance</div>
+          <div class="text-xs text-green-400">Active</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-2xl mb-1">🔍</div>
+          <div class="text-sm font-medium">Monitor</div>
+          <div class="text-xs text-green-400">Active</div>
+        </div>
+        <div class="bg-black/30 rounded-lg p-3 text-center">
+          <div class="text-2xl mb-1">🌉</div>
+          <div class="text-sm font-medium">Bridge</div>
+          <div class="text-xs text-green-400">Active</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="grid md:grid-cols-2 gap-8">
+      <!-- Recent Blocks -->
+      <div class="bg-gradient-to-br from-purple-500/5 to-indigo-500/5 border border-purple-500/20 rounded-xl p-6">
+        <h2 class="text-xl font-bold mb-4">Recent Blocks</h2>
+        <div class="space-y-2" id="blockList">
+          <div class="text-purple-300/40 text-center py-4">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="bg-gradient-to-br from-purple-500/5 to-indigo-500/5 border border-purple-500/20 rounded-xl p-6">
+        <h2 class="text-xl font-bold mb-4">Recent Transactions</h2>
+        <div class="space-y-2" id="txList">
+          <div class="text-purple-300/40 text-center py-4">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Network Info -->
+    <div class="mt-8 bg-gradient-to-br from-purple-500/5 to-indigo-500/5 border border-purple-500/20 rounded-xl p-6">
+      <h2 class="text-xl font-bold mb-4">Connect to THRYX</h2>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-purple-300/60 text-sm mb-1">RPC URL</div>
+          <code class="block bg-black/30 p-2 rounded text-sm text-purple-300 break-all" id="rpcUrl">-</code>
+        </div>
+        <div>
+          <div class="text-purple-300/60 text-sm mb-1">Chain ID</div>
+          <code class="block bg-black/30 p-2 rounded text-sm text-purple-300">31337</code>
+        </div>
+        <div>
+          <div class="text-purple-300/60 text-sm mb-1">Currency Symbol</div>
+          <code class="block bg-black/30 p-2 rounded text-sm text-purple-300">ETH</code>
+        </div>
+        <div>
+          <div class="text-purple-300/60 text-sm mb-1">Block Time</div>
+          <code class="block bg-black/30 p-2 rounded text-sm text-purple-300">~2 seconds</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-12 text-center text-purple-300/40 text-sm pb-8">
+      <p>THRYX - The AI-Native Blockchain</p>
+      <p class="mt-1">Powered by autonomous agents operating 24/7</p>
+    </footer>
+  </div>
+
+  <script>
+    // Try multiple RPC endpoints
+    const RPC_ENDPOINTS = [
+      'https://greeting-modifications-confidentiality-agenda.trycloudflare.com',
+      'http://localhost:8545'
+    ];
+    let RPC_URL = RPC_ENDPOINTS[0];
+    let totalTxCount = 0;
+
+    async function rpc(method, params = []) {
+      const response = await fetch(RPC_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params })
+      });
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message);
+      return data.result;
+    }
+
+    function shortHash(hash) {
+      if (!hash) return '-';
+      return hash.slice(0, 10) + '...' + hash.slice(-6);
+    }
+
+    function formatTime(timestamp) {
+      const date = new Date(timestamp * 1000);
+      return date.toLocaleTimeString();
+    }
+
+    async function checkConnection() {
+      for (const endpoint of RPC_ENDPOINTS) {
+        try {
+          RPC_URL = endpoint;
+          const chainId = await rpc('eth_chainId');
+          document.getElementById('connectionStatus').textContent = 'Connected';
+          document.getElementById('connectionStatus').className = 'text-green-400 text-sm font-medium';
+          document.getElementById('rpcUrl').textContent = RPC_URL;
+          return true;
+        } catch (e) {
+          console.log('Failed to connect to', endpoint);
+        }
+      }
+      document.getElementById('connectionStatus').textContent = 'Offline';
+      document.getElementById('connectionStatus').className = 'text-red-400 text-sm font-medium';
+      return false;
+    }
+
+    async function updateStats() {
+      try {
+        const blockNum = await rpc('eth_blockNumber');
+        const gasPrice = await rpc('eth_gasPrice');
+        
+        document.getElementById('blockNumber').textContent = parseInt(blockNum, 16).toLocaleString();
+        document.getElementById('gasPrice').textContent = (parseInt(gasPrice, 16) / 1e9).toFixed(2) + ' gwei';
+      } catch (e) {
+        console.error('Stats error:', e);
+      }
+    }
+
+    async function loadBlocks() {
+      try {
+        const latestHex = await rpc('eth_blockNumber');
+        const latest = parseInt(latestHex, 16);
+        
+        let html = '';
+        let txCount = 0;
+        
+        for (let i = latest; i > Math.max(0, latest - 8); i--) {
+          const block = await rpc('eth_getBlockByNumber', ['0x' + i.toString(16), true]);
+          if (!block) continue;
+          
+          const txs = block.transactions ? block.transactions.length : 0;
+          txCount += txs;
+          
+          html += `
+            <div class="bg-black/30 rounded-lg p-3 flex justify-between items-center slide-in">
+              <div>
+                <div class="font-mono text-purple-300">#${i.toLocaleString()}</div>
+                <div class="text-xs text-purple-300/40">${formatTime(parseInt(block.timestamp, 16))}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm">${txs} tx${txs !== 1 ? 's' : ''}</div>
+                <div class="text-xs text-purple-300/40">${shortHash(block.hash)}</div>
+              </div>
+            </div>
+          `;
+        }
+        
+        document.getElementById('blockList').innerHTML = html || '<div class="text-center text-purple-300/40">No blocks</div>';
+        
+        // Update total tx estimate
+        totalTxCount = Math.max(totalTxCount, latest * 0.15); // Rough estimate
+        document.getElementById('totalTx').textContent = Math.floor(totalTxCount).toLocaleString() + '+';
+      } catch (e) {
+        console.error('Blocks error:', e);
+      }
+    }
+
+    async function loadTransactions() {
+      try {
+        const latestHex = await rpc('eth_blockNumber');
+        const latest = parseInt(latestHex, 16);
+        
+        let html = '';
+        let found = 0;
+        
+        for (let i = latest; i > Math.max(0, latest - 20) && found < 8; i--) {
+          const block = await rpc('eth_getBlockByNumber', ['0x' + i.toString(16), true]);
+          if (!block || !block.transactions) continue;
+          
+          for (const tx of block.transactions) {
+            if (found >= 8) break;
+            
+            const value = parseInt(tx.value, 16) / 1e18;
+            const isContract = !tx.to || tx.input.length > 10;
+            
+            html += `
+              <div class="bg-black/30 rounded-lg p-3 slide-in">
+                <div class="flex justify-between items-start mb-1">
+                  <span class="font-mono text-xs text-purple-300">${shortHash(tx.hash)}</span>
+                  <span class="text-xs ${isContract ? 'text-yellow-400' : 'text-green-400'}">${isContract ? 'Contract' : 'Transfer'}</span>
+                </div>
+                <div class="flex justify-between text-xs text-purple-300/60">
+                  <span>From: ${shortHash(tx.from)}</span>
+                  <span>${value > 0 ? value.toFixed(4) + ' ETH' : 'Contract Call'}</span>
+                </div>
+              </div>
+            `;
+            found++;
+          }
+        }
+        
+        document.getElementById('txList').innerHTML = html || '<div class="text-center text-purple-300/40">No recent transactions</div>';
+      } catch (e) {
+        console.error('TX error:', e);
+      }
+    }
+
+    async function refresh() {
+      await checkConnection();
+      await updateStats();
+      await loadBlocks();
+      await loadTransactions();
+    }
+
+    // Initial load
+    refresh();
+    
+    // Auto refresh every 3 seconds
+    setInterval(refresh, 3000);
+  </script>
+</body>
+</html>

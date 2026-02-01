@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>THRYX Wallet</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      width: 360px;
+      min-height: 500px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+      color: #fff;
+    }
+    .header {
+      background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+      padding: 20px;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+    .header .subtitle {
+      font-size: 11px;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+    }
+    .status-dot.offline {
+      background: #ef4444;
+    }
+    .container {
+      padding: 20px;
+    }
+    .balance-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .balance-label {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .balance-value {
+      font-size: 36px;
+      font-weight: 700;
+      margin: 8px 0;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .balance-usd {
+      font-size: 14px;
+      color: #888;
+    }
+    .address-box {
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .address-text {
+      font-family: monospace;
+      font-size: 12px;
+      color: #aaa;
+    }
+    .copy-btn {
+      background: transparent;
+      border: none;
+      color: #6366f1;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .copy-btn:hover {
+      color: #8b5cf6;
+    }
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .action-btn {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .action-btn:hover {
+      transform: translateY(-2px);
+      opacity: 0.9;
+    }
+    .action-btn.secondary {
+      background: rgba(255,255,255,0.1);
+    }
+    .section {
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .tx-list {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .tx-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tx-item:last-child {
+      border-bottom: none;
+    }
+    .tx-type {
+      font-size: 12px;
+      color: #22c55e;
+    }
+    .tx-type.out {
+      color: #ef4444;
+    }
+    .tx-amount {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .tx-hash {
+      font-size: 10px;
+      color: #666;
+      font-family: monospace;
+    }
+    input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 12px;
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    input:focus {
+      outline: none;
+      border-color: #6366f1;
+    }
+    input::placeholder {
+      color: #666;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.9);
+      padding: 20px;
+      z-index: 100;
+    }
+    .modal.active {
+      display: block;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: #888;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .network-info {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 20px;
+      font-size: 12px;
+    }
+    .network-info div {
+      margin-bottom: 4px;
+    }
+    .network-info span {
+      color: #888;
+    }
+    .setup-screen {
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .setup-screen h2 {
+      margin-bottom: 20px;
+    }
+    .setup-screen p {
+      color: #888;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 12px;
+      color: #fff;
+      font-size: 12px;
+      font-family: monospace;
+      resize: none;
+      height: 80px;
+      margin-bottom: 12px;
+    }
+    .warning {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      color: #ef4444;
+      margin-bottom: 12px;
+    }
+    .success {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      color: #22c55e;
+      margin-bottom: 12px;
+    }
+    .rpc-input {
+      margin-bottom: 20px;
+    }
+    .rpc-input label {
+      display: block;
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>THRYX</h1>
+    <div class="subtitle">AI-Native Blockchain</div>
+    <div class="status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Connecting...</span>
+    </div>
+  </div>
+
+  <!-- Setup Screen -->
+  <div id="setupScreen" class="setup-screen" style="display: none;">
+    <h2>Welcome to THRYX</h2>
+    <p>Connect your wallet to the AI-native blockchain.</p>
+    
+    <button class="action-btn" onclick="quickConnect()" style="width: 100%; margin-bottom: 12px;">
+      Quick Connect (Watch Only)
+    </button>
+    
+    <div class="rpc-input" style="margin-top: 20px;">
+      <label>RPC URL (optional)</label>
+      <input type="text" id="rpcInput" placeholder="https://..." value="">
+    </div>
+    
+    <button class="action-btn secondary" onclick="showImport()" style="width: 100%; margin-bottom: 12px;">
+      Import Private Key
+    </button>
+    
+    <button class="action-btn secondary" onclick="showWatchAddress()" style="width: 100%;">
+      Watch Any Address
+    </button>
+    
+    <div id="importSection" style="display: none; margin-top: 20px;">
+      <textarea id="privateKeyInput" placeholder="Enter your private key (0x...)"></textarea>
+      <button class="action-btn" onclick="importWallet()" style="width: 100%;">
+        Import
+      </button>
+    </div>
+    
+    <div id="watchSection" style="display: none; margin-top: 20px;">
+      <input type="text" id="watchAddressInput" placeholder="Address to watch (0x...)">
+      <button class="action-btn" onclick="watchAddress()" style="width: 100%;">
+        Watch
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Wallet Screen -->
+  <div id="mainScreen" class="container" style="display: none;">
+    <div class="balance-card">
+      <div class="balance-label">Total Balance</div>
+      <div class="balance-value" id="balanceValue">0.0000</div>
+      <div class="balance-usd">ETH</div>
+    </div>
+
+    <div class="address-box">
+      <span class="address-text" id="addressText">0x0000...0000</span>
+      <button class="copy-btn" onclick="copyAddress()">Copy</button>
+    </div>
+
+    <div class="actions">
+      <button class="action-btn" onclick="showSendModal()">Send</button>
+      <button class="action-btn secondary" onclick="refreshBalance()">Refresh</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Network Info</div>
+      <div class="network-info">
+        <div><span>Network:</span> THRYX</div>
+        <div><span>Chain ID:</span> 31337</div>
+        <div><span>RPC:</span> <span id="rpcDisplay">-</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Recent Activity</div>
+      <div class="tx-list" id="txList">
+        <div class="tx-item">
+          <div>
+            <div class="tx-type">No transactions yet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="action-btn secondary" onclick="logout()" style="width: 100%; margin-top: 12px;">
+      Logout
+    </button>
+  </div>
+
+  <!-- Send Modal -->
+  <div id="sendModal" class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Send ETH</span>
+      <button class="close-btn" onclick="closeSendModal()">&times;</button>
+    </div>
+    
+    <input type="text" id="sendTo" placeholder="Recipient address (0x...)">
+    <input type="text" id="sendAmount" placeholder="Amount (ETH)">
+    
+    <div id="sendError" class="warning" style="display: none;"></div>
+    <div id="sendSuccess" class="success" style="display: none;"></div>
+    
+    <button class="action-btn" onclick="sendTransaction()" style="width: 100%;" id="sendBtn">
+      Send
+    </button>
+  </div>
+
+  <script src="wallet.js"></script>
+</body>
+</html>

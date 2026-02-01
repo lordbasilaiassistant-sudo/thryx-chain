@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-rgb: 15, 15, 26;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #0f0f1a 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #6366f1;
+  border-radius: 4px;
+}
+
+/* Card styles */
+.card {
+  @apply bg-thryx-card border border-thryx-border rounded-xl p-6;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effect */
+.glow {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+/* Pulse animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(99, 102, 241, 0.5);
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Button styles */
+.btn-primary {
+  @apply bg-gradient-to-r from-thryx-primary to-thryx-secondary text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:opacity-90 hover:scale-105;
+}
+
+.btn-secondary {
+  @apply bg-thryx-card border border-thryx-border text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:border-thryx-primary;
+}
+
+/* Input styles */
+.input {
+  @apply bg-thryx-dark border border-thryx-border rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-thryx-primary transition-colors;
+}

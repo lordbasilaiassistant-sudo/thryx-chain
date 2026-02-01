@@ -1,0 +1,24 @@
+{
+  "network": "localhost",
+  "timestamp": "2026-02-01T01:12:22.849Z",
+  "contracts": {
+    "MockUSDC": "0xc351628EB244ec633d5f21fBD6621e1a683B1181",
+    "MockWETH": "0xFD471836031dc5108809D173A067e8486B9047A3",
+    "AgentRegistry": "0xcbEAF3BDe82155F56486Fb5a1072cb8baAf547cc",
+    "StablecoinGas": "0x1429859428C0aBc9C2C47C8Ee9FBaf82cFA0F20f",
+    "SimpleAMM": "0xB0D4afd8879eD9F52b28595d31B441D079B2Ca07",
+    "AgentOracle": "0x162A433068F51e18b7d13932F27e66a3f99E6890",
+    "IntentMempool": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
+    "L2WithdrawalContract": "not_deployed"
+  },
+  "agents": {
+    "oracle": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "arbitrage": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "liquidity": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+    "governance": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+    "monitor": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+    "security": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+    "intent": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f"
+  },
+  "treasury": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+}
