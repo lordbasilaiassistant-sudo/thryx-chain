@@ -15,8 +15,8 @@ RPC_URL = os.getenv("RPC_URL", "http://thryx-node:8545")
 STATE_FILE = os.getenv("PRICE_ORACLE_STATE", "/app/data/price_oracle_state.json")
 UPDATE_INTERVAL = int(os.getenv("PRICE_UPDATE_INTERVAL", "120"))  # 2 minutes
 
-# Oracle account
-ORACLE_KEY = "0x701b615bbdfb9de65240bc28bd21bbc0d996645a3dd57e7b12bc2bdf6f192c82"  # Account 14
+# Oracle account (Hardhat account 13 - 0xcd3B766CCDd6AE721141F452C550Ca635964ce71)
+ORACLE_KEY = "0xea6c44ac03bff858b476bba40716402b03e41b8e97e276d1baec7c37d42484a0"
 
 # CoinGecko API (free, no key needed)
 COINGECKO_URL = "https://api.coingecko.com/api/v3/simple/price"
