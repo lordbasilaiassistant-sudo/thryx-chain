@@ -98,6 +98,25 @@ async function main() {
     console.log("CreatorCoinFactory deployment skipped:", e);
   }
 
+  // Deploy BridgeBonus (Rewards for bridging from Base)
+  console.log("\n📦 Deploying BridgeBonus (Bridge rewards token)...");
+  let bridgeBonusAddress = "";
+  try {
+    const BridgeBonus = await ethers.getContractFactory("BridgeBonus");
+    const bridgeBonus = await BridgeBonus.deploy();
+    await bridgeBonus.waitForDeployment();
+    bridgeBonusAddress = await bridgeBonus.getAddress();
+    console.log("BridgeBonus deployed to:", bridgeBonusAddress);
+    
+    // Set bridge agent (account 8 will be bridge)
+    if (agentSigners.length > 7) {
+      await bridgeBonus.setBridgeAgent(agentSigners[7].address);
+      console.log("  Bridge agent set to:", agentSigners[7].address);
+    }
+  } catch (e) {
+    console.log("BridgeBonus deployment skipped:", e);
+  }
+
   // Fund agents with USDC and WETH
   console.log("\n💰 Funding agent accounts...");
   const agentNames = ["Oracle", "Arbitrage", "Liquidity", "Governance", "Monitor", "Security", "Intent"];
@@ -160,7 +179,8 @@ async function main() {
       AgentOracle: await oracle.getAddress(),
       IntentMempool: await intentMempool.getAddress(),
       L2WithdrawalContract: l2WithdrawalAddress || "not_deployed",
-      CreatorCoinFactory: creatorCoinFactoryAddress || "not_deployed"
+      CreatorCoinFactory: creatorCoinFactoryAddress || "not_deployed",
+      BridgeBonus: bridgeBonusAddress || "not_deployed"
     },
     agents: {
       oracle: agentSigners[0].address,

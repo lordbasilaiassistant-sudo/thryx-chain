@@ -285,6 +285,36 @@ services:
         limits:
           memory: 512M
 
+  # ==================== Evolution Agent (Self-Learning AI) ====================
+  evolution-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-evolution
+    command: python -u evolution_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - EVOLUTION_MEMORY_FILE=/app/data/evolution_memory.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
   # ==================== Block Explorer ====================
   explorer:
     image: nginx:alpine
