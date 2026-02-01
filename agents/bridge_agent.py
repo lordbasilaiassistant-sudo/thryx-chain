@@ -32,7 +32,7 @@ FALLBACK_STATE_FILE = "bridge_deposit_state.json"
 # Security limits
 MAX_DEPOSIT_PER_TX = 10.0  # ETH
 MAX_DEPOSIT_PER_DAY = 50.0  # ETH per address
-LOOKBACK_BLOCKS = 100  # How far back to scan on startup
+LOOKBACK_BLOCKS = 10000  # How far back to scan on startup (increased to catch older deposits)
 
 
 class BridgeState:
