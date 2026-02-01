@@ -166,6 +166,27 @@ async function main() {
   await amm.connect(liquidityAgent).addLiquidity(liquidityUsdc, liquidityWeth);
   console.log("  Added 50k USDC + 20 WETH liquidity");
 
+  // Deploy Faucet (for free starter ETH)
+  console.log("\n📦 Deploying Faucet (free starter ETH for users)...");
+  let faucetAddress = "";
+  try {
+    const Faucet = await ethers.getContractFactory("Faucet");
+    const faucet = await Faucet.deploy();
+    await faucet.waitForDeployment();
+    faucetAddress = await faucet.getAddress();
+    console.log("Faucet deployed to:", faucetAddress);
+    
+    // Fund the faucet with 100 ETH from deployer
+    const fundingAmount = ethers.parseEther("100");
+    await deployer.sendTransaction({
+      to: faucetAddress,
+      value: fundingAmount
+    });
+    console.log("  Funded faucet with 100 ETH");
+  } catch (e) {
+    console.log("Faucet deployment skipped:", e);
+  }
+
   // Save deployment addresses
   const deployment = {
     network: "localhost",
@@ -180,7 +201,8 @@ async function main() {
       IntentMempool: await intentMempool.getAddress(),
       L2WithdrawalContract: l2WithdrawalAddress || "not_deployed",
       CreatorCoinFactory: creatorCoinFactoryAddress || "not_deployed",
-      BridgeBonus: bridgeBonusAddress || "not_deployed"
+      BridgeBonus: bridgeBonusAddress || "not_deployed",
+      Faucet: faucetAddress || "not_deployed"
     },
     agents: {
       oracle: agentSigners[0].address,
