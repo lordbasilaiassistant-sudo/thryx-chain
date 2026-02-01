@@ -428,6 +428,89 @@ class BridgeAgent:
             
             print(f"[{self.name}] ========================================")
     
+    def restore_balances_on_startup(self):
+        """
+        CRITICAL: On node restart, re-mint all historical deposits that are missing.
+        This ensures user funds are never lost even if the node resets.
+        """
+        print(f"[{self.name}] ============================================", flush=True)
+        print(f"[{self.name}] CHECKING FOR MISSING BALANCES (Node Restart Recovery)", flush=True)
+        print(f"[{self.name}] ============================================", flush=True)
+        
+        # Get all completed deposits from history
+        deposits = self.state.state.get("deposits", [])
+        completed_deposits = [d for d in deposits if d.get("status") == "completed"]
+        
+        if not completed_deposits:
+            print(f"[{self.name}] No historical deposits to restore.", flush=True)
+            return
+        
+        print(f"[{self.name}] Found {len(completed_deposits)} historical deposits to verify", flush=True)
+        
+        # Group by recipient
+        recipient_deposits = {}
+        for dep in completed_deposits:
+            recipient = dep.get("from", "").lower()
+            if recipient:
+                if recipient not in recipient_deposits:
+                    recipient_deposits[recipient] = {"ETH": 0, "USDC": 0}
+                if dep.get("token") == "USDC":
+                    recipient_deposits[recipient]["USDC"] += dep.get("value", 0)
+                else:
+                    recipient_deposits[recipient]["ETH"] += dep.get("value", 0)
+        
+        # Check each recipient's current balance vs expected
+        restored_count = 0
+        for recipient, expected in recipient_deposits.items():
+            try:
+                checksum_addr = Web3.to_checksum_address(recipient)
+                
+                # Check ETH
+                if expected["ETH"] > 0:
+                    current_balance = self.thryx_w3.eth.get_balance(checksum_addr)
+                    expected_eth = expected["ETH"]
+                    
+                    # If balance is significantly less than expected, restore
+                    if current_balance < expected_eth * 0.99:  # 1% tolerance for gas
+                        missing = expected_eth - current_balance
+                        print(f"[{self.name}] Restoring {self.thryx_w3.from_wei(missing, 'ether')} ETH to {recipient[:10]}...", flush=True)
+                        
+                        result = self.mint_on_thryx(recipient, missing, "ETH")
+                        if result["success"]:
+                            print(f"[{self.name}] ✓ ETH restored! TX: {result['tx_hash'][:20]}...", flush=True)
+                            restored_count += 1
+                        else:
+                            print(f"[{self.name}] ✗ Failed to restore ETH: {result['error']}", flush=True)
+                
+                # Check USDC
+                if expected["USDC"] > 0 and self.usdc_address:
+                    usdc = self.thryx_w3.eth.contract(
+                        address=Web3.to_checksum_address(self.usdc_address),
+                        abi=self.usdc_abi
+                    )
+                    current_usdc = usdc.functions.balanceOf(checksum_addr).call()
+                    
+                    if current_usdc < expected["USDC"] * 0.99:
+                        missing = expected["USDC"] - current_usdc
+                        print(f"[{self.name}] Restoring {missing / 1e6} USDC to {recipient[:10]}...", flush=True)
+                        
+                        result = self.mint_on_thryx(recipient, int(missing), "USDC")
+                        if result["success"]:
+                            print(f"[{self.name}] ✓ USDC restored! TX: {result['tx_hash'][:20]}...", flush=True)
+                            restored_count += 1
+                        else:
+                            print(f"[{self.name}] ✗ Failed to restore USDC: {result['error']}", flush=True)
+                            
+            except Exception as e:
+                print(f"[{self.name}] Error restoring {recipient}: {e}", flush=True)
+        
+        if restored_count > 0:
+            print(f"[{self.name}] ============================================", flush=True)
+            print(f"[{self.name}] RESTORED {restored_count} MISSING BALANCES!", flush=True)
+            print(f"[{self.name}] ============================================", flush=True)
+        else:
+            print(f"[{self.name}] All balances already correct - no restoration needed.", flush=True)
+    
     def run(self):
         """Main loop"""
         print(f"[{self.name}] Starting Secure Bridge Agent...")
@@ -448,6 +531,9 @@ class BridgeAgent:
         print(f"[{self.name}]   Send ETH or USDC to: {self.base_account.address if self.base_account else 'N/A'}")
         print(f"[{self.name}]   You receive same token on THRYX at your address")
         print(f"[{self.name}] ============================================")
+        
+        # CRITICAL: Restore any missing balances from node restart
+        self.restore_balances_on_startup()
         
         scan_count = 0
         while True:
