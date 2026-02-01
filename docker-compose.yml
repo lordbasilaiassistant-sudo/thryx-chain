@@ -315,6 +315,36 @@ services:
         limits:
           memory: 512M
 
+  # ==================== Continuous Builder Agent (Always Building) ====================
+  builder-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-builder
+    command: python -u continuous_builder.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - BUILDER_STATE=/app/data/builder_state.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
   # ==================== Block Explorer ====================
   explorer:
     image: nginx:alpine
