@@ -29,12 +29,11 @@ jobs:
           echo ""
           echo "THRYX keep-alive ping complete at $(date)"
 
-      - name: Wake Codespace if needed
+      - name: Wake Codespace and Ensure Public Ports
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         if: env.GH_TOKEN != ''
         run: |
-          # Only runs if GH_PAT secret is set
           CODESPACE="crispy-goggles-v6jg77gvqwqv3pxpg"
           
           STATE=$(gh codespace list --json name,state -q ".[] | select(.name==\"$CODESPACE\") | .state" 2>/dev/null || echo "unknown")
@@ -43,4 +42,12 @@ jobs:
           if [ "$STATE" = "Shutdown" ]; then
             echo "Waking codespace..."
             gh codespace ssh -c "$CODESPACE" -- "cd /workspaces/thryx-chain && docker compose --env-file .env up -d" || echo "Wake attempt complete"
+            sleep 30
           fi
+          
+          # Always ensure ports are public (they reset on restart)
+          echo "Ensuring ports are public..."
+          gh codespace ports visibility 8545:public 5100:public 3000:public -c "$CODESPACE" || echo "Port visibility set"
+          
+          # Verify containers are running
+          gh codespace ssh -c "$CODESPACE" -- "docker ps --format '{{.Names}}: {{.Status}}' | head -5" || echo "Container check complete"

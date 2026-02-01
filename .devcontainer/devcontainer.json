@@ -30,7 +30,7 @@
     }
   },
   "postCreateCommand": "npm install && docker compose up -d --build",
-  "postStartCommand": "docker compose up -d",
+  "postStartCommand": "docker compose --env-file .env up -d && sleep 5",
   "customizations": {
     "vscode": {
       "extensions": [
