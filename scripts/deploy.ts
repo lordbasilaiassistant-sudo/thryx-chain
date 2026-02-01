@@ -85,6 +85,19 @@ async function main() {
     console.log("L2WithdrawalContract deployment skipped (contract may not exist)");
   }
 
+  // Deploy CreatorCoinFactory (Social Tokens like Zora)
+  console.log("\n📦 Deploying CreatorCoinFactory (Zora-like social tokens)...");
+  let creatorCoinFactoryAddress = "";
+  try {
+    const CreatorCoinFactory = await ethers.getContractFactory("CreatorCoinFactory");
+    const creatorCoinFactory = await CreatorCoinFactory.deploy(treasury.address);
+    await creatorCoinFactory.waitForDeployment();
+    creatorCoinFactoryAddress = await creatorCoinFactory.getAddress();
+    console.log("CreatorCoinFactory deployed to:", creatorCoinFactoryAddress);
+  } catch (e) {
+    console.log("CreatorCoinFactory deployment skipped:", e);
+  }
+
   // Fund agents with USDC and WETH
   console.log("\n💰 Funding agent accounts...");
   const agentNames = ["Oracle", "Arbitrage", "Liquidity", "Governance", "Monitor", "Security", "Intent"];
@@ -146,7 +159,8 @@ async function main() {
       SimpleAMM: await amm.getAddress(),
       AgentOracle: await oracle.getAddress(),
       IntentMempool: await intentMempool.getAddress(),
-      L2WithdrawalContract: l2WithdrawalAddress || "not_deployed"
+      L2WithdrawalContract: l2WithdrawalAddress || "not_deployed",
+      CreatorCoinFactory: creatorCoinFactoryAddress || "not_deployed"
     },
     agents: {
       oracle: agentSigners[0].address,

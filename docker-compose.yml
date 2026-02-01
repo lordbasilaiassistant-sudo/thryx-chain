@@ -7,11 +7,11 @@ version: '3.8'
 # ============================================================
 
 services:
-  # ==================== Core Chain ====================
+  # ==================== Core Chain (Anvil with Persistent State) ====================
   thryx-node:
     build:
       context: .
-      dockerfile: Dockerfile.node
+      dockerfile: Dockerfile.anvil
     container_name: thryx-node
     ports:
       - "0.0.0.0:8545:8545"
@@ -19,7 +19,7 @@ services:
     volumes:
       - thryx-data:/app/data
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8545"]
+      test: ["CMD", "cast", "block-number", "--rpc-url", "http://localhost:8545"]
       interval: 2s
       timeout: 5s
       retries: 30

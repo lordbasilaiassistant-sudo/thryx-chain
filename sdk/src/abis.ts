@@ -64,6 +64,56 @@ export const ABIS = {
     'function totalFeesCollected() view returns (uint256)',
     'function humanFeesAccrued() view returns (uint256)',
   ],
+
+  // ==================== Creator Coins (Like Zora) ====================
+  
+  CreatorCoin: [
+    // ERC20
+    'function name() view returns (string)',
+    'function symbol() view returns (string)',
+    'function decimals() view returns (uint8)',
+    'function totalSupply() view returns (uint256)',
+    'function balanceOf(address account) view returns (uint256)',
+    'function transfer(address to, uint256 amount) returns (bool)',
+    'function approve(address spender, uint256 amount) returns (bool)',
+    
+    // Bonding Curve Trading
+    'function buy(uint256 minTokensOut) payable returns (uint256)',
+    'function sell(uint256 tokenAmount, uint256 minEthOut) returns (uint256)',
+    'function getCurrentPrice() view returns (uint256)',
+    'function getTokensForEth(uint256 ethAmount) view returns (uint256)',
+    'function getEthForTokens(uint256 tokenAmount) view returns (uint256)',
+    
+    // Stats & Info
+    'function creator() view returns (address)',
+    'function profileUri() view returns (string)',
+    'function createdAt() view returns (uint256)',
+    'function totalEthLocked() view returns (uint256)',
+    'function totalVolume() view returns (uint256)',
+    'function totalTrades() view returns (uint256)',
+    'function getStats() view returns (uint256 price, uint256 supply, uint256 ethLocked, uint256 volume, uint256 trades, uint256 marketCap)',
+    
+    // Owner
+    'function setProfileUri(string newUri)',
+    
+    // Events
+    'event Buy(address indexed buyer, uint256 ethIn, uint256 tokensOut, uint256 newPrice)',
+    'event Sell(address indexed seller, uint256 tokensIn, uint256 ethOut, uint256 newPrice)',
+  ],
+
+  CreatorCoinFactory: [
+    'function createCoin(string name, string symbol, string profileUri) returns (address)',
+    'function totalCoins() view returns (uint256)',
+    'function allCoins(uint256 index) view returns (address)',
+    'function coinsByCreator(address creator, uint256 index) view returns (address)',
+    'function coinBySymbol(string symbol) view returns (address)',
+    'function getCoinsByCreator(address creator) view returns (address[])',
+    'function getCoins(uint256 offset, uint256 limit) view returns (address[])',
+    'function protocolTreasury() view returns (address)',
+    
+    // Events
+    'event CoinCreated(address indexed coin, address indexed creator, string name, string symbol, string profileUri)',
+  ],
 };
 
 export default ABIS;
