@@ -10,15 +10,15 @@ RUN mkdir -p /app/data
 # Expose RPC and WS ports
 EXPOSE 8545 8546
 
-# Health check using curl (cast may not work as health check)
+# Health check - foundry image uses alpine, has curl via ash
 HEALTHCHECK --interval=5s --timeout=3s --start-period=10s --retries=5 \
-  CMD wget -q --spider http://localhost:8545 || exit 1
+  CMD cast block-number --rpc-url http://127.0.0.1:8545 2>/dev/null || exit 1
 
 # Start Anvil with persistent state
 # --state: saves and loads blockchain state automatically
 # State survives container restarts!
-CMD ["anvil", \
-     "--host", "0.0.0.0", \
+ENTRYPOINT ["anvil"]
+CMD ["--host", "0.0.0.0", \
      "--port", "8545", \
      "--chain-id", "31337", \
      "--block-time", "2", \
