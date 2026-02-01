@@ -382,9 +382,9 @@ class BridgeAgent:
             
             token = deposit.get("token", "ETH")
             
-            print(f"[{self.name}] ========================================")
-            print(f"[{self.name}] NEW {token} DEPOSIT DETECTED ON BASE!")
-            print(f"[{self.name}] From: {deposit['from']}")
+            print(f"[{self.name}] ========================================", flush=True)
+            print(f"[{self.name}] NEW {token} DEPOSIT DETECTED ON BASE!", flush=True)
+            print(f"[{self.name}] From: {deposit['from']}", flush=True)
             
             if token == "USDC":
                 amount_display = f"{deposit['value'] / 1e6} USDC"
@@ -449,15 +449,23 @@ class BridgeAgent:
         print(f"[{self.name}]   You receive same token on THRYX at your address")
         print(f"[{self.name}] ============================================")
         
+        scan_count = 0
         while True:
             try:
+                scan_count += 1
+                if scan_count % 6 == 1:  # Log every minute
+                    current = self.base_w3.eth.block_number
+                    last = self.state.get_last_block()
+                    print(f"[{self.name}] Scanning... Current block: {current}, Last scanned: {last}, Behind: {current - last}", flush=True)
                 self.process_deposits()
                 time.sleep(10)
             except KeyboardInterrupt:
-                print(f"[{self.name}] Shutting down...")
+                print(f"[{self.name}] Shutting down...", flush=True)
                 break
             except Exception as e:
-                print(f"[{self.name}] Error: {e}")
+                print(f"[{self.name}] Error in main loop: {e}", flush=True)
+                import traceback
+                traceback.print_exc()
                 time.sleep(5)
 
 
