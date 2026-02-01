@@ -27,6 +27,24 @@
   </style>
 </head>
 <body class="min-h-screen text-white">
+  <!-- Navigation Bar -->
+  <nav class="bg-black/50 border-b border-purple-500/30">
+    <div class="max-w-7xl mx-auto px-4 py-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-6 text-sm">
+          <a href="#" class="text-purple-400 font-medium">Explorer</a>
+          <a href="https://mysocial-thryx.vercel.app" target="_blank" class="text-purple-300/70 hover:text-purple-300 transition">MySocial</a>
+          <a href="https://thryx-wallet.vercel.app" target="_blank" class="text-purple-300/70 hover:text-purple-300 transition">Wallet & Bridge</a>
+          <a href="https://github.com/lordbasilaiassistant-sudo/thryx-chain" target="_blank" class="text-purple-300/70 hover:text-purple-300 transition">GitHub</a>
+          <a href="https://www.npmjs.com/package/@thryx/sdk" target="_blank" class="text-purple-300/70 hover:text-purple-300 transition">SDK</a>
+        </div>
+        <div class="text-xs text-purple-400/60">
+          Alpha v0.1
+        </div>
+      </div>
+    </div>
+  </nav>
+
   <!-- Header -->
   <header class="border-b border-purple-500/20 bg-black/30 backdrop-blur-sm sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-4">
@@ -151,9 +169,37 @@
     </div>
 
     <!-- Footer -->
-    <footer class="mt-12 text-center text-purple-300/40 text-sm pb-8">
-      <p>THRYX - The AI-Native Blockchain</p>
-      <p class="mt-1">Powered by autonomous agents operating 24/7</p>
+    <footer class="mt-12 border-t border-purple-500/20 pt-8 pb-8">
+      <div class="grid md:grid-cols-3 gap-8 text-center md:text-left">
+        <div>
+          <h4 class="text-purple-300 font-semibold mb-3">THRYX Ecosystem</h4>
+          <div class="space-y-2 text-sm">
+            <a href="https://mysocial-thryx.vercel.app" target="_blank" class="block text-purple-300/60 hover:text-purple-300 transition">MySocial - Creator Coins</a>
+            <a href="https://thryx-wallet.vercel.app" target="_blank" class="block text-purple-300/60 hover:text-purple-300 transition">Wallet & Bridge</a>
+            <a href="#" class="block text-purple-300/60">Block Explorer (You're here)</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="text-purple-300 font-semibold mb-3">Developers</h4>
+          <div class="space-y-2 text-sm">
+            <a href="https://github.com/lordbasilaiassistant-sudo/thryx-chain" target="_blank" class="block text-purple-300/60 hover:text-purple-300 transition">GitHub Repository</a>
+            <a href="https://www.npmjs.com/package/@thryx/sdk" target="_blank" class="block text-purple-300/60 hover:text-purple-300 transition">@thryx/sdk (NPM)</a>
+            <a href="https://github.com/lordbasilaiassistant-sudo/thryx-chain#readme" target="_blank" class="block text-purple-300/60 hover:text-purple-300 transition">Documentation</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="text-purple-300 font-semibold mb-3">Network Info</h4>
+          <div class="space-y-2 text-sm text-purple-300/60">
+            <p>Chain ID: 31337</p>
+            <p>AI Agents: 6 Active</p>
+            <p class="text-purple-400">Alpha v0.1</p>
+          </div>
+        </div>
+      </div>
+      <div class="mt-8 text-center text-purple-300/40 text-sm">
+        <p>THRYX - The AI-Native Blockchain</p>
+        <p class="mt-1">Powered by autonomous agents operating 24/7</p>
+      </div>
     </footer>
   </div>
 
