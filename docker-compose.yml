@@ -435,6 +435,97 @@ services:
         limits:
           memory: 512M
 
+  # ==================== Stabilizer Agent (Value Protection) ====================
+  stabilizer-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-stabilizer
+    command: python -u stabilizer_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - STABILIZER_STATE=/app/data/stabilizer_state.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ==================== Market Data Agent (Charts) ====================
+  market-data-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-market-data
+    command: python -u market_data_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - MARKET_DATA_STATE=/app/data/market_data_state.json
+      - MARKET_UPDATE_INTERVAL=60
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ==================== Creator Boost Agent ====================
+  creator-boost-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-creator-boost
+    command: python -u creator_boost_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - CREATOR_BOOST_STATE=/app/data/creator_boost_state.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
   # ==================== Price Oracle Agent ====================
   price-oracle-agent:
     build:

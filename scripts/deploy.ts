@@ -289,6 +289,77 @@ async function main() {
     console.log("PriceOracle deployment skipped:", e);
   }
 
+  // Deploy MarketData (Chart data for MySocial)
+  console.log("\n📦 Deploying MarketData (Charts for MySocial)...");
+  let marketDataAddress = "";
+  try {
+    const MarketData = await ethers.getContractFactory("MarketData");
+    const marketData = await MarketData.deploy();
+    await marketData.waitForDeployment();
+    marketDataAddress = await marketData.getAddress();
+    console.log("MarketData deployed to:", marketDataAddress);
+    
+    // Authorize market data agent (account 16)
+    if (agentSigners.length > 15) {
+      await marketData.authorizeAgent(agentSigners[15].address, true);
+      console.log("  Authorized market data agent:", agentSigners[15].address);
+    }
+  } catch (e) {
+    console.log("MarketData deployment skipped:", e);
+  }
+
+  // Deploy ValueProtector (Price floor protection)
+  console.log("\n📦 Deploying ValueProtector (Price floors)...");
+  let valueProtectorAddress = "";
+  try {
+    const ValueProtector = await ethers.getContractFactory("ValueProtector");
+    const valueProtector = await ValueProtector.deploy();
+    await valueProtector.waitForDeployment();
+    valueProtectorAddress = await valueProtector.getAddress();
+    console.log("ValueProtector deployed to:", valueProtectorAddress);
+    
+    // Fund with ETH for protection
+    await deployer.sendTransaction({
+      to: valueProtectorAddress,
+      value: ethers.parseEther("50")
+    });
+    console.log("  Funded with 50 ETH for value protection");
+    
+    // Authorize stabilizer agent (account 15)
+    if (agentSigners.length > 14) {
+      await valueProtector.authorizeAgent(agentSigners[14].address, true);
+      console.log("  Authorized stabilizer agent:", agentSigners[14].address);
+    }
+  } catch (e) {
+    console.log("ValueProtector deployment skipped:", e);
+  }
+
+  // Deploy CreatorBoost (Creator promotion)
+  console.log("\n📦 Deploying CreatorBoost (Creator promotion)...");
+  let creatorBoostAddress = "";
+  try {
+    const CreatorBoost = await ethers.getContractFactory("CreatorBoost");
+    const creatorBoost = await CreatorBoost.deploy();
+    await creatorBoost.waitForDeployment();
+    creatorBoostAddress = await creatorBoost.getAddress();
+    console.log("CreatorBoost deployed to:", creatorBoostAddress);
+    
+    // Fund with ETH for boosting
+    await deployer.sendTransaction({
+      to: creatorBoostAddress,
+      value: ethers.parseEther("25")
+    });
+    console.log("  Funded with 25 ETH for creator boosts");
+    
+    // Authorize creator boost agent (account 17)
+    if (agentSigners.length > 16) {
+      await creatorBoost.authorizeAgent(agentSigners[16].address, true);
+      console.log("  Authorized creator boost agent:", agentSigners[16].address);
+    }
+  } catch (e) {
+    console.log("CreatorBoost deployment skipped:", e);
+  }
+
   // Save deployment addresses
   const deployment = {
     network: "localhost",
@@ -309,7 +380,10 @@ async function main() {
       Treasury: treasuryContractAddress || "not_deployed",
       Governance: governanceAddress || "not_deployed",
       Campaign: campaignAddress || "not_deployed",
-      PriceOracle: priceOracleAddress || "not_deployed"
+      PriceOracle: priceOracleAddress || "not_deployed",
+      MarketData: marketDataAddress || "not_deployed",
+      ValueProtector: valueProtectorAddress || "not_deployed",
+      CreatorBoost: creatorBoostAddress || "not_deployed"
     },
     agents: {
       oracle: agentSigners[0].address,
