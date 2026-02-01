@@ -9,6 +9,7 @@ import random
 from datetime import datetime, timedelta
 from web3 import Web3
 from eth_account import Account
+from price_feed import format_eth_with_usdc
 
 # Config
 RPC_URL = os.getenv("RPC_URL", "http://thryx-node:8545")
@@ -204,7 +205,7 @@ class EventAgent:
                 raw = getattr(signed, 'rawTransaction', None) or getattr(signed, 'raw_transaction', None)
                 self.w3.eth.send_raw_transaction(raw)
                 
-                self.log(f"💰 Added {liquidity_eth} ETH initial liquidity")
+                self.log(f"💰 Added {format_eth_with_usdc(liquidity_eth)} initial liquidity")
             
             return coin_addr
             

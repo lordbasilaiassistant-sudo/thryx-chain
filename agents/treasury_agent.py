@@ -8,6 +8,7 @@ import time
 from datetime import datetime
 from web3 import Web3
 from eth_account import Account
+from price_feed import get_price_feed, format_eth_with_usdc, eth_to_usdc
 
 # Config
 RPC_URL = os.getenv("RPC_URL", "http://thryx-node:8545")
@@ -112,7 +113,8 @@ class TreasuryAgent:
             can_distribute = stats[5]
             
             balance_eth = balance / 10**18
-            self.log(f"Treasury balance: {balance_eth:.4f} ETH")
+            usdc_value = eth_to_usdc(balance_eth)
+            self.log(f"Treasury balance: {balance_eth:.4f} ETH (${usdc_value:,.2f})")
             
             if can_distribute:
                 self.log("🔔 Distribution ready! Executing...")

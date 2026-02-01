@@ -9,6 +9,7 @@ import random
 from datetime import datetime
 from web3 import Web3
 from eth_account import Account
+from price_feed import get_price_feed, format_eth_with_usdc
 
 # Config
 RPC_URL = os.getenv("RPC_URL", "http://thryx-node:8545")
@@ -180,7 +181,7 @@ class MarketMakerAgent:
             receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
             
             if receipt.status == 1:
-                self.log(f"📈 Provided {amount:.4f} ETH liquidity to ${symbol}")
+                self.log(f"📈 Provided {format_eth_with_usdc(amount)} liquidity to ${symbol}")
                 self.state.data["buys"] += 1
                 self.state.data["volume_eth"] += amount
                 self.state.data["last_activity"][coin_addr] = time.time()
