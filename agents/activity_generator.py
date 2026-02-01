@@ -25,7 +25,7 @@ ACCOUNTS = [
 ]
 
 # Contract addresses (update these after deploy)
-FACTORY_ADDRESS = os.getenv("FACTORY_ADDRESS", "0x95401dc811bb5740090279Ba06cfA8fcF6113778")
+FACTORY_ADDRESS = os.getenv("FACTORY_ADDRESS", "0x2E2Ed0Cfd3AD2f1d34481277b3204d807Ca2F8c2")
 
 FACTORY_ABI = [
     {"name": "createCoin", "type": "function", "stateMutability": "nonpayable",
