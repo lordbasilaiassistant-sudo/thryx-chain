@@ -158,18 +158,11 @@
   </div>
 
   <script>
-    // Auto-detect RPC endpoint based on current host
-    const currentHost = window.location.hostname;
-    const RPC_ENDPOINTS = [];
-    
-    // If running on github.dev, use the 8545 port on same codespace
-    if (currentHost.includes('.app.github.dev')) {
-      const codespaceBase = currentHost.replace('-5100.app.github.dev', '-8545.app.github.dev');
-      RPC_ENDPOINTS.push('https://' + codespaceBase);
-    }
-    // Fallback to localhost
-    RPC_ENDPOINTS.push('http://localhost:8545');
-    RPC_ENDPOINTS.push('http://thryx-node:8545');
+    // Use local proxy on same origin to avoid CORS/auth issues
+    const RPC_ENDPOINTS = [
+      window.location.origin + '/rpc',  // Nginx proxy (same origin)
+      'http://localhost:8545'
+    ];
     
     let RPC_URL = RPC_ENDPOINTS[0];
     let totalTxCount = 0;
