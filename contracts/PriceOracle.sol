@@ -38,9 +38,10 @@ contract PriceOracle is Ownable {
         require(block.timestamp >= lastUpdate + minUpdateInterval, "Update too frequent");
         require(newPrice > 0, "Invalid price");
         
-        // Sanity check: price shouldn't change more than 50% in one update
-        if (ethUsdPrice > 0) {
-            uint256 maxChange = ethUsdPrice / 2;
+        // Sanity check: price shouldn't change more than 20% in one update
+        // Skip check if this is the first real update (still at default $2500)
+        if (updateCount > 0) {
+            uint256 maxChange = ethUsdPrice / 5;  // 20% max change
             require(
                 newPrice >= ethUsdPrice - maxChange && newPrice <= ethUsdPrice + maxChange,
                 "Price change too large"
