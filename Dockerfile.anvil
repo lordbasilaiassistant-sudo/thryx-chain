@@ -7,20 +7,16 @@ WORKDIR /app
 # Create data directory for persistent state
 RUN mkdir -p /app/data
 
-# Copy genesis state (will be created on first run)
-COPY --chown=root:root scripts/anvil-init.sh /app/
-
 # Expose RPC and WS ports
 EXPOSE 8545 8546
 
-# Health check
+# Health check using curl (cast may not work as health check)
 HEALTHCHECK --interval=5s --timeout=3s --start-period=10s --retries=5 \
-  CMD cast block-number --rpc-url http://localhost:8545 || exit 1
+  CMD wget -q --spider http://localhost:8545 || exit 1
 
 # Start Anvil with persistent state
-# --state: saves blockchain state to file
-# --dump-state: dumps state on shutdown
-# --load-state: loads state on startup
+# --state: saves and loads blockchain state automatically
+# State survives container restarts!
 CMD ["anvil", \
      "--host", "0.0.0.0", \
      "--port", "8545", \
