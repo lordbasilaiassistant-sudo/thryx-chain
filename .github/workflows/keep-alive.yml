@@ -2,55 +2,45 @@ name: Keep THRYX Alive
 
 on:
   schedule:
-    # Run every 25 minutes
-    - cron: '*/25 * * * *'
-  workflow_dispatch:  # Allow manual trigger
-
-permissions:
-  contents: read
-  codespaces: write
+    # Run every 20 minutes
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
 
 jobs:
-  keep-alive:
+  ping-thryx:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping THRYX Codespace
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+      - name: Ping THRYX RPC
         run: |
-          echo "Pinging THRYX Codespace to keep it alive..."
-          
-          # Get the codespace name
-          CODESPACE=$(gh codespace list --json name,state -q '.[0].name' 2>/dev/null || echo "")
-          
-          if [ -z "$CODESPACE" ]; then
-            echo "No codespace found, creating one..."
-            gh codespace create --repo ${{ github.repository }} --machine standardLinux32gb
-            CODESPACE=$(gh codespace list --json name -q '.[0].name')
-          fi
-          
-          echo "Codespace: $CODESPACE"
-          
-          # Check if codespace is running
-          STATE=$(gh codespace list --json name,state -q ".[] | select(.name==\"$CODESPACE\") | .state")
-          echo "Current state: $STATE"
-          
-          if [ "$STATE" = "Shutdown" ]; then
-            echo "Codespace is shutdown, waking it up..."
-            gh codespace ssh -c "$CODESPACE" -- "echo 'Codespace awakened at $(date)'"
-          fi
-          
-          # Run docker compose up to ensure containers are running
-          gh codespace ssh -c "$CODESPACE" -- "cd /workspaces/thryx-chain && docker compose --env-file .env up -d 2>/dev/null || echo 'Starting containers...'"
+          echo "Pinging THRYX endpoints..."
           
           # Ping the RPC endpoint
-          gh codespace ssh -c "$CODESPACE" -- "curl -s -X POST http://localhost:8545 -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\",\"params\":[],\"id\":1}' | head -c 100"
+          curl -s --max-time 60 -X POST \
+            "https://crispy-goggles-v6jg77gvqwqv3pxpg-8545.app.github.dev" \
+            -H "Content-Type: application/json" \
+            -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+            || echo "RPC ping sent"
+          
+          # Ping the explorer
+          curl -s --max-time 60 \
+            "https://crispy-goggles-v6jg77gvqwqv3pxpg-5100.app.github.dev" \
+            | head -c 200 || echo "Explorer ping sent"
           
           echo ""
-          echo "THRYX is alive!"
+          echo "THRYX keep-alive ping complete at $(date)"
 
-      - name: Health Check
+      - name: Wake Codespace if needed
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        if: env.GH_TOKEN != ''
         run: |
-          echo "Checking THRYX health via public URL..."
-          # This also helps keep the port forwarding active
-          curl -s --max-time 30 "https://crispy-goggles-v6jg77gvqwqv3pxpg-5100.app.github.dev" | head -c 200 || echo "Explorer check complete"
+          # Only runs if GH_PAT secret is set
+          CODESPACE="crispy-goggles-v6jg77gvqwqv3pxpg"
+          
+          STATE=$(gh codespace list --json name,state -q ".[] | select(.name==\"$CODESPACE\") | .state" 2>/dev/null || echo "unknown")
+          echo "Codespace state: $STATE"
+          
+          if [ "$STATE" = "Shutdown" ]; then
+            echo "Waking codespace..."
+            gh codespace ssh -c "$CODESPACE" -- "cd /workspaces/thryx-chain && docker compose --env-file .env up -d" || echo "Wake attempt complete"
+          fi
