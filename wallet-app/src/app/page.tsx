@@ -74,22 +74,30 @@ export default function Home() {
         ) : (
           // Connected state
           <div className="space-y-8">
-            {/* Network warning */}
-            {chainId !== thryx.id && (
+            {/* Network info - show current chain */}
+            {chainId !== thryx.id && chainId !== 8453 && (
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">⚠️</span>
                   <div>
-                    <p className="font-semibold text-yellow-400">Wrong Network</p>
-                    <p className="text-sm text-gray-400">Switch to THRYX to use all features</p>
+                    <p className="font-semibold text-yellow-400">Unsupported Network</p>
+                    <p className="text-sm text-gray-400">Switch to THRYX or Base</p>
                   </div>
                 </div>
-                <button 
-                  onClick={() => switchChain?.({ chainId: thryx.id })}
-                  className="btn-primary"
-                >
-                  Switch to THRYX
-                </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => switchChain?.({ chainId: thryx.id })}
+                    className="btn-primary"
+                  >
+                    THRYX
+                  </button>
+                  <button 
+                    onClick={() => switchChain?.({ chainId: 8453 })}
+                    className="btn-secondary"
+                  >
+                    Base
+                  </button>
+                </div>
               </div>
             )}
 

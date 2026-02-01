@@ -1,28 +1,47 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useBalance, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useBalance, useSendTransaction, useWaitForTransactionReceipt, useChainId } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
+import { base } from 'wagmi/chains';
 import { thryx, CONTRACTS } from '@/lib/wagmi';
 
 export function WalletDashboard() {
   const { address } = useAccount();
+  const chainId = useChainId();
   const [showSend, setShowSend] = useState(false);
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
 
   // ETH Balance on THRYX
-  const { data: ethBalance, refetch: refetchEth } = useBalance({
+  const { data: thryxEthBalance, refetch: refetchThryxEth } = useBalance({
     address,
     chainId: thryx.id,
   });
 
+  // ETH Balance on Base
+  const { data: baseEthBalance, refetch: refetchBaseEth } = useBalance({
+    address,
+    chainId: base.id,
+  });
+
   // USDC Balance on THRYX
-  const { data: usdcBalance, refetch: refetchUsdc } = useBalance({
+  const { data: thryxUsdcBalance, refetch: refetchThryxUsdc } = useBalance({
     address,
     token: CONTRACTS.USDC as `0x${string}`,
     chainId: thryx.id,
   });
+
+  // USDC Balance on Base  
+  const { data: baseUsdcBalance, refetch: refetchBaseUsdc } = useBalance({
+    address,
+    token: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`,
+    chainId: base.id,
+  });
+
+  // For backwards compatibility
+  const ethBalance = thryxEthBalance;
+  const usdcBalance = thryxUsdcBalance;
 
   const { sendTransaction, data: txHash, isPending } = useSendTransaction();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
@@ -40,9 +59,14 @@ export function WalletDashboard() {
   };
 
   const refreshBalances = () => {
-    refetchEth();
-    refetchUsdc();
+    refetchThryxEth();
+    refetchBaseEth();
+    refetchThryxUsdc();
+    refetchBaseUsdc();
   };
+
+  const isOnThryx = chainId === thryx.id;
+  const isOnBase = chainId === base.id;
 
   return (
     <div className="card">
@@ -61,23 +85,54 @@ export function WalletDashboard() {
       <div className="bg-thryx-dark rounded-lg p-4 mb-6">
         <p className="text-xs text-gray-500 mb-1">Connected Address</p>
         <p className="font-mono text-sm break-all">{address}</p>
+        <p className="text-xs text-gray-500 mt-2">
+          Currently on: <span className={isOnThryx ? 'text-purple-400' : isOnBase ? 'text-blue-400' : 'text-yellow-400'}>
+            {isOnThryx ? 'THRYX' : isOnBase ? 'Base' : 'Other Network'}
+          </span>
+        </p>
       </div>
 
-      {/* Balances */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-thryx-dark rounded-lg p-4">
-          <p className="text-xs text-gray-500 mb-1">ETH Balance</p>
-          <p className="text-2xl font-bold">
-            {ethBalance ? formatEther(ethBalance.value).slice(0, 8) : '0.00'}
-          </p>
-          <p className="text-xs text-gray-500">THRYX ETH</p>
+      {/* THRYX Balances */}
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-purple-400 mb-2 flex items-center gap-2">
+          <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
+          THRYX Chain
+        </h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-thryx-dark rounded-lg p-4">
+            <p className="text-xs text-gray-500 mb-1">ETH</p>
+            <p className="text-xl font-bold">
+              {thryxEthBalance ? formatEther(thryxEthBalance.value).slice(0, 8) : '0.00'}
+            </p>
+          </div>
+          <div className="bg-thryx-dark rounded-lg p-4">
+            <p className="text-xs text-gray-500 mb-1">USDC</p>
+            <p className="text-xl font-bold">
+              {thryxUsdcBalance ? Number(thryxUsdcBalance.formatted).toFixed(2) : '0.00'}
+            </p>
+          </div>
         </div>
-        <div className="bg-thryx-dark rounded-lg p-4">
-          <p className="text-xs text-gray-500 mb-1">USDC Balance</p>
-          <p className="text-2xl font-bold">
-            {usdcBalance ? Number(usdcBalance.formatted).toFixed(2) : '0.00'}
-          </p>
-          <p className="text-xs text-gray-500">USDC</p>
+      </div>
+
+      {/* Base Balances */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-blue-400 mb-2 flex items-center gap-2">
+          <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+          Base Chain
+        </h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-thryx-dark rounded-lg p-4">
+            <p className="text-xs text-gray-500 mb-1">ETH</p>
+            <p className="text-xl font-bold">
+              {baseEthBalance ? formatEther(baseEthBalance.value).slice(0, 8) : '0.00'}
+            </p>
+          </div>
+          <div className="bg-thryx-dark rounded-lg p-4">
+            <p className="text-xs text-gray-500 mb-1">USDC</p>
+            <p className="text-xl font-bold">
+              {baseUsdcBalance ? Number(baseUsdcBalance.formatted).toFixed(2) : '0.00'}
+            </p>
+          </div>
         </div>
       </div>
 
