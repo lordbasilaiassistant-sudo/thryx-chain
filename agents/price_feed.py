@@ -1,6 +1,7 @@
 """
 THRYX Price Feed
-Provides ETH/USDC price conversion for all agents
+Provides ETH/USD price conversion for all agents
+Uses on-chain PriceOracle that gets live prices from CoinGecko
 """
 import os
 import json
@@ -8,21 +9,25 @@ from web3 import Web3
 
 RPC_URL = os.getenv("RPC_URL", "http://thryx-node:8545")
 
-# SimpleAMM ABI (just what we need for price)
-AMM_ABI = [
+# PriceOracle ABI
+ORACLE_ABI = [
+    {"name": "ethUsdPrice", "type": "function", "stateMutability": "view",
+     "inputs": [], "outputs": [{"name": "", "type": "uint256"}]},
     {"name": "getPrice", "type": "function", "stateMutability": "view",
-     "inputs": [], "outputs": [{"name": "", "type": "uint256"}]},
-    {"name": "reserveA", "type": "function", "stateMutability": "view",
-     "inputs": [], "outputs": [{"name": "", "type": "uint256"}]},
-    {"name": "reserveB", "type": "function", "stateMutability": "view",
+     "inputs": [], "outputs": [
+         {"name": "price", "type": "uint256"},
+         {"name": "timestamp", "type": "uint256"},
+         {"name": "isStale", "type": "bool"}
+     ]},
+    {"name": "getEthUsdPrice", "type": "function", "stateMutability": "view",
      "inputs": [], "outputs": [{"name": "", "type": "uint256"}]},
 ]
 
 
 class PriceFeed:
-    """Provides ETH price in USDC terms"""
+    """Provides ETH price in USD terms from on-chain oracle"""
     
-    # Default fallback price if AMM not available
+    # Default fallback price if oracle not available
     DEFAULT_ETH_PRICE = 2500  # $2500 per ETH
     
     def __init__(self, rpc_url=None):
@@ -30,7 +35,7 @@ class PriceFeed:
         self.deployment = self._load_deployment()
         self._cached_price = None
         self._cache_time = 0
-        self.cache_duration = 30  # Cache price for 30 seconds
+        self.cache_duration = 10  # Cache price for 10 seconds
     
     def _load_deployment(self):
         try:
@@ -39,21 +44,21 @@ class PriceFeed:
         except:
             return {"contracts": {}}
     
-    def get_amm_contract(self):
-        """Get SimpleAMM contract instance"""
-        amm_addr = self.deployment.get("contracts", {}).get("SimpleAMM", "")
-        if not amm_addr or amm_addr == "not_deployed":
+    def get_oracle_contract(self):
+        """Get PriceOracle contract instance"""
+        oracle_addr = self.deployment.get("contracts", {}).get("PriceOracle", "")
+        if not oracle_addr or oracle_addr == "not_deployed":
             return None
         
         return self.w3.eth.contract(
-            address=Web3.to_checksum_address(amm_addr),
-            abi=AMM_ABI
+            address=Web3.to_checksum_address(oracle_addr),
+            abi=ORACLE_ABI
         )
     
     def get_eth_price_usdc(self) -> float:
         """
-        Get current ETH price in USDC
-        Returns price from AMM or fallback default
+        Get current ETH price in USD from on-chain oracle
+        Oracle is updated by PriceOracleAgent with live CoinGecko prices
         """
         import time
         
@@ -62,23 +67,18 @@ class PriceFeed:
             return self._cached_price
         
         try:
-            amm = self.get_amm_contract()
-            if not amm:
+            oracle = self.get_oracle_contract()
+            if not oracle:
                 return self.DEFAULT_ETH_PRICE
             
-            # getPrice returns USDC per ETH (scaled by 1e18)
-            # USDC has 6 decimals, WETH has 18
-            # reserveA = USDC (6 decimals)
-            # reserveB = WETH (18 decimals)
-            reserve_usdc = amm.functions.reserveA().call()  # 6 decimals
-            reserve_weth = amm.functions.reserveB().call()  # 18 decimals
+            # Get price from oracle (8 decimals, like Chainlink)
+            price_raw = oracle.functions.ethUsdPrice().call()
             
-            if reserve_weth == 0:
+            if price_raw == 0:
                 return self.DEFAULT_ETH_PRICE
             
-            # Price = USDC / WETH, adjusted for decimals
-            # (reserve_usdc / 1e6) / (reserve_weth / 1e18) = (reserve_usdc * 1e12) / reserve_weth
-            price = (reserve_usdc * 10**12) / reserve_weth
+            # Convert from 8 decimals to float
+            price = price_raw / 10**8
             
             self._cached_price = price
             self._cache_time = time.time()

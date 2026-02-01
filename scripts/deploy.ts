@@ -270,6 +270,25 @@ async function main() {
     console.log("Campaign deployment skipped:", e);
   }
 
+  // Deploy PriceOracle (Live ETH/USD prices)
+  console.log("\n📦 Deploying PriceOracle (Live ETH/USD prices from CoinGecko)...");
+  let priceOracleAddress = "";
+  try {
+    const PriceOracle = await ethers.getContractFactory("PriceOracle");
+    const priceOracle = await PriceOracle.deploy();
+    await priceOracle.waitForDeployment();
+    priceOracleAddress = await priceOracle.getAddress();
+    console.log("PriceOracle deployed to:", priceOracleAddress);
+    
+    // Authorize price oracle agent (account 14)
+    if (agentSigners.length > 13) {
+      await priceOracle.authorizeOracle(agentSigners[13].address, true);
+      console.log("  Authorized price oracle agent:", agentSigners[13].address);
+    }
+  } catch (e) {
+    console.log("PriceOracle deployment skipped:", e);
+  }
+
   // Save deployment addresses
   const deployment = {
     network: "localhost",
@@ -289,7 +308,8 @@ async function main() {
       ThryxToken: thryxTokenAddress || "not_deployed",
       Treasury: treasuryContractAddress || "not_deployed",
       Governance: governanceAddress || "not_deployed",
-      Campaign: campaignAddress || "not_deployed"
+      Campaign: campaignAddress || "not_deployed",
+      PriceOracle: priceOracleAddress || "not_deployed"
     },
     agents: {
       oracle: agentSigners[0].address,
