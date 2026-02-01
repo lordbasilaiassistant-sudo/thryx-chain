@@ -339,8 +339,10 @@ class BridgeAgent:
                     'maxPriorityFeePerGas': self.thryx_w3.to_wei(1, 'gwei'),
                 })
                 
-                signed = self.thryx_minter.sign_transaction(tx)
-                tx_hash = self.thryx_w3.eth.send_raw_transaction(signed.raw_transaction)
+                signed = self.thryx_w3.eth.account.sign_transaction(tx, self.thryx_minter.key)
+                # Handle both old and new web3.py API
+                raw_tx = getattr(signed, 'rawTransaction', None) or getattr(signed, 'raw_transaction', None)
+                tx_hash = self.thryx_w3.eth.send_raw_transaction(raw_tx)
                 
                 return {"success": True, "tx_hash": tx_hash.hex()}
                 
@@ -358,8 +360,10 @@ class BridgeAgent:
                     'maxPriorityFeePerGas': self.thryx_w3.to_wei(1, 'gwei'),
                 }
                 
-                signed = self.thryx_minter.sign_transaction(tx)
-                tx_hash = self.thryx_w3.eth.send_raw_transaction(signed.raw_transaction)
+                signed = self.thryx_w3.eth.account.sign_transaction(tx, self.thryx_minter.key)
+                # Handle both old and new web3.py API
+                raw_tx = getattr(signed, 'rawTransaction', None) or getattr(signed, 'raw_transaction', None)
+                tx_hash = self.thryx_w3.eth.send_raw_transaction(raw_tx)
                 
                 return {"success": True, "tx_hash": tx_hash.hex()}
             

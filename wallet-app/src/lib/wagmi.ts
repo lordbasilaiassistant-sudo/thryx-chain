@@ -46,5 +46,5 @@ export const CONTRACTS = {
   AMM: process.env.NEXT_PUBLIC_AMM_ADDRESS || '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9',
 };
 
-// Bridge wallet address on Base
-export const BRIDGE_WALLET = process.env.NEXT_PUBLIC_BRIDGE_WALLET || '0x03F2B0AE7f6badE9944d2CFB8Ad66b62CF6ba1d4';
+// Bridge wallet address on Base (trim to remove any accidental whitespace)
+export const BRIDGE_WALLET = (process.env.NEXT_PUBLIC_BRIDGE_WALLET || '0x338304e35841d2Fa6849EF855f6beBD8988C65B8').trim();

@@ -1,71 +1,85 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useBalance, useSendTransaction, useChainId, useSwitchChain } from 'wagmi';
+import { useAccount, useBalance, useChainId, useSwitchChain } from 'wagmi';
+import { useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { base } from 'wagmi/chains';
 import { thryx, BRIDGE_WALLET } from '@/lib/wagmi';
-
-type BridgeDirection = 'to-thryx' | 'from-thryx';
 
 export function BridgePanel() {
   const { address } = useAccount();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
-  const [direction, setDirection] = useState<BridgeDirection>('to-thryx');
+  const [direction, setDirection] = useState<'to-thryx' | 'from-thryx'>('to-thryx');
   const [amount, setAmount] = useState('');
-  const [status, setStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
 
-  // Base ETH balance
-  const { data: baseBalance } = useBalance({
+  // Balances
+  const { data: baseBalance, refetch: refetchBase } = useBalance({
     address,
     chainId: base.id,
   });
 
-  // THRYX ETH balance
-  const { data: thryxBalance } = useBalance({
+  const { data: thryxBalance, refetch: refetchThryx } = useBalance({
     address,
     chainId: thryx.id,
   });
 
-  const { sendTransaction, isPending } = useSendTransaction();
+  // Transaction hooks
+  const { 
+    sendTransaction, 
+    data: txHash, 
+    isPending,
+    isError,
+    error 
+  } = useSendTransaction();
+  
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
 
-  const handleBridge = async () => {
-    if (!amount || parseFloat(amount) <= 0) return;
+  const isOnBase = chainId === base.id;
+  const sourceBalance = direction === 'to-thryx' ? baseBalance : thryxBalance;
 
-    setStatus('pending');
-
-    try {
-      if (direction === 'to-thryx') {
-        // Bridge TO THRYX: Send ETH to bridge wallet on Base
-        if (chainId !== base.id) {
-          await switchChain?.({ chainId: base.id });
-          return; // User needs to retry after switching
-        }
-
-        sendTransaction({
-          to: BRIDGE_WALLET as `0x${string}`,
-          value: parseEther(amount),
-          chainId: base.id,
-        });
-      } else {
-        // Bridge FROM THRYX: This requires the withdrawal bridge
-        // For now, show instructions
-        setStatus('idle');
-        alert('To withdraw from THRYX to Base, please use the withdrawal bridge CLI tool. Contact support for assistance.');
-        return;
-      }
-      
-      setStatus('success');
-      setAmount('');
-    } catch (e) {
-      setStatus('error');
-    }
+  const handleSwitchToBase = () => {
+    switchChain?.({ chainId: base.id });
   };
 
-  const sourceChain = direction === 'to-thryx' ? 'Base' : 'THRYX';
-  const destChain = direction === 'to-thryx' ? 'THRYX' : 'Base';
-  const sourceBalance = direction === 'to-thryx' ? baseBalance : thryxBalance;
+  const handleBridgeClick = () => {
+    console.log('Bridge clicked!', { amount, direction, chainId, isOnBase, BRIDGE_WALLET });
+    
+    if (!amount || parseFloat(amount) <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
+    if (direction === 'from-thryx') {
+      alert('Withdrawals from THRYX require the CLI tool. Contact support.');
+      return;
+    }
+
+    if (!isOnBase) {
+      alert('Please switch to Base network first, then click Bridge again.');
+      handleSwitchToBase();
+      return;
+    }
+
+    // Execute the transaction - this WILL trigger wallet popup
+    console.log('Sending transaction to:', BRIDGE_WALLET, 'amount:', amount);
+    
+    sendTransaction({
+      to: BRIDGE_WALLET as `0x${string}`,
+      value: parseEther(amount),
+    });
+  };
+
+  // Refresh balances when confirmed
+  if (isConfirmed) {
+    setTimeout(() => {
+      refetchBase();
+      refetchThryx();
+    }, 3000);
+  }
 
   return (
     <div className="card">
@@ -98,33 +112,52 @@ export function BridgePanel() {
         </button>
       </div>
 
-      {/* Bridge Flow Visual */}
+      {/* Network Status */}
+      <div className={`mb-4 p-3 rounded-lg text-sm ${isOnBase ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+        {isOnBase ? (
+          <span>✓ Connected to Base - Ready to bridge</span>
+        ) : (
+          <div className="flex items-center justify-between">
+            <span>⚠ Switch to Base to bridge</span>
+            <button 
+              onClick={handleSwitchToBase}
+              className="underline hover:no-underline"
+            >
+              Switch Now
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Balance Display */}
       <div className="bg-thryx-dark rounded-lg p-4 mb-4">
         <div className="flex items-center justify-between text-sm">
           <div className="text-center">
-            <div className="w-12 h-12 bg-thryx-card rounded-full flex items-center justify-center mx-auto mb-2">
-              {direction === 'to-thryx' ? '🔵' : '🟣'}
+            <div className="w-12 h-12 bg-thryx-card rounded-full flex items-center justify-center mx-auto mb-2 text-2xl">
+              🔵
             </div>
-            <p className="font-medium">{sourceChain}</p>
+            <p className="font-medium">Base</p>
             <p className="text-xs text-gray-500">
-              {sourceBalance ? formatEther(sourceBalance.value).slice(0, 8) : '0.00'} ETH
+              {baseBalance ? formatEther(baseBalance.value).slice(0, 8) : '0.00'} ETH
             </p>
           </div>
           
           <div className="flex-1 mx-4">
-            <div className="h-0.5 bg-gradient-to-r from-thryx-primary to-thryx-secondary relative">
-              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg">
+            <div className="h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 relative">
+              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg bg-thryx-dark px-2">
                 →
               </span>
             </div>
           </div>
           
           <div className="text-center">
-            <div className="w-12 h-12 bg-thryx-card rounded-full flex items-center justify-center mx-auto mb-2">
-              {direction === 'to-thryx' ? '🟣' : '🔵'}
+            <div className="w-12 h-12 bg-thryx-card rounded-full flex items-center justify-center mx-auto mb-2 text-2xl">
+              🟣
             </div>
-            <p className="font-medium">{destChain}</p>
-            <p className="text-xs text-gray-500">1:1 Rate</p>
+            <p className="font-medium">THRYX</p>
+            <p className="text-xs text-gray-500">
+              {thryxBalance ? formatEther(thryxBalance.value).slice(0, 8) : '0.00'} ETH
+            </p>
           </div>
         </div>
       </div>
@@ -137,13 +170,13 @@ export function BridgePanel() {
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.0"
+            placeholder="0.001"
             step="0.001"
             min="0"
             className="input w-full pr-16"
           />
           <button
-            onClick={() => setAmount(sourceBalance ? formatEther(sourceBalance.value) : '0')}
+            onClick={() => setAmount(baseBalance ? formatEther(baseBalance.value) : '0')}
             className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-thryx-primary hover:underline"
           >
             MAX
@@ -154,6 +187,10 @@ export function BridgePanel() {
       {/* Bridge Info */}
       <div className="bg-thryx-dark rounded-lg p-3 mb-4 text-xs text-gray-400 space-y-1">
         <div className="flex justify-between">
+          <span>Rate</span>
+          <span className="text-white">1:1</span>
+        </div>
+        <div className="flex justify-between">
           <span>Fee</span>
           <span className="text-white">Free</span>
         </div>
@@ -161,41 +198,61 @@ export function BridgePanel() {
           <span>Time</span>
           <span className="text-white">~30 seconds</span>
         </div>
-        <div className="flex justify-between">
-          <span>You receive</span>
-          <span className="text-white">{amount || '0'} ETH</span>
-        </div>
       </div>
 
       {/* Bridge Button */}
       <button
-        onClick={handleBridge}
-        disabled={isPending || !amount || parseFloat(amount) <= 0}
-        className="btn-primary w-full disabled:opacity-50"
+        onClick={handleBridgeClick}
+        disabled={isPending || isConfirming || !amount}
+        className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isPending ? 'Confirming...' : `Bridge to ${destChain}`}
+        {isPending ? '⏳ Confirm in Wallet...' : 
+         isConfirming ? '⏳ Confirming on Base...' : 
+         !isOnBase ? 'Switch to Base & Bridge' :
+         'Bridge to THRYX'}
       </button>
 
       {/* Status Messages */}
-      {status === 'success' && (
-        <div className="mt-4 bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-green-400 text-sm">
-          Transaction sent! Your {destChain} ETH will arrive in ~30 seconds.
+      {isPending && (
+        <div className="mt-4 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-blue-400 text-sm">
+          Please confirm the transaction in your wallet...
         </div>
       )}
 
-      {status === 'error' && (
+      {isConfirming && (
+        <div className="mt-4 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-blue-400 text-sm">
+          Transaction submitted! Waiting for Base confirmation...
+        </div>
+      )}
+
+      {isConfirmed && (
+        <div className="mt-4 bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-green-400 text-sm">
+          ✓ Bridge transaction confirmed! Your THRYX ETH will arrive in ~30 seconds.
+          {txHash && (
+            <a 
+              href={`https://basescan.org/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline ml-2"
+            >
+              View on Basescan
+            </a>
+          )}
+        </div>
+      )}
+
+      {isError && (
         <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm">
-          Bridge failed. Please try again.
+          Error: {error?.message || 'Transaction failed'}
         </div>
       )}
 
       {/* Bridge Wallet Info */}
-      {direction === 'to-thryx' && (
-        <div className="mt-4 text-xs text-gray-500">
-          <p className="mb-1">Bridge Wallet:</p>
-          <p className="font-mono break-all">{BRIDGE_WALLET}</p>
-        </div>
-      )}
+      <div className="mt-4 text-xs text-gray-500">
+        <p className="mb-1">Bridge Wallet (on Base):</p>
+        <p className="font-mono break-all bg-thryx-dark p-2 rounded">{BRIDGE_WALLET}</p>
+        <p className="mt-2 text-gray-600">Send ETH to this address on Base → Receive ETH on THRYX</p>
+      </div>
     </div>
   );
 }
