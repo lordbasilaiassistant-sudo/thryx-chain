@@ -10,14 +10,20 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * @dev Social token with bonding curve pricing (like Zora creator coins)
  * 
  * Features:
- * - Bonding curve: price increases with supply
+ * - Bonding curve: price increases with supply (quadratic)
+ * - Price floor: AI agents ensure value never drops below floor
  * - Creator fee: creator earns % on every trade
  * - Protocol fee: THRYX treasury earns % on every trade
  * - Automatic liquidity: ETH locked in contract
  */
 contract CreatorCoin is ERC20, Ownable, ReentrancyGuard {
-    // Bonding curve parameters
-    uint256 public constant CURVE_FACTOR = 1e15; // Price growth factor
+    // Bonding curve parameters (more aggressive for value growth)
+    uint256 public constant BASE_PRICE = 1e14;           // Starting price: 0.0001 ETH
+    uint256 public constant GROWTH_FACTOR = 1e12;        // Quadratic growth factor
+    uint256 public priceFloor;                           // Minimum price (set by AI agents)
+    uint256 public allTimeHigh;                          // Track ATH
+    
+    // Fees
     uint256 public constant CREATOR_FEE_BPS = 500; // 5% to creator
     uint256 public constant PROTOCOL_FEE_BPS = 100; // 1% to protocol
     uint256 public constant BPS_DENOMINATOR = 10000;
@@ -56,16 +62,36 @@ contract CreatorCoin is ERC20, Ownable, ReentrancyGuard {
     }
     
     /**
-     * @dev Get current price based on bonding curve
-     * Price = CURVE_FACTOR * (totalSupply / 1e18)^2
+     * @dev Get current price based on quadratic bonding curve
+     * Price = BASE_PRICE + (supply² * GROWTH_FACTOR)
+     * Price can NEVER go below priceFloor (enforced by AI agents)
      */
     function getCurrentPrice() public view returns (uint256) {
         uint256 supply = totalSupply();
-        if (supply == 0) return CURVE_FACTOR;
+        uint256 calculatedPrice;
         
-        // price = CURVE_FACTOR * (supply / 1e18)^2 / 1e18
-        uint256 normalized = supply / 1e12; // Scale down for math
-        return CURVE_FACTOR + (normalized * normalized / 1e12);
+        if (supply == 0) {
+            calculatedPrice = BASE_PRICE;
+        } else {
+            // Quadratic curve: price grows with square of supply
+            // More aggressive growth for sustained value increase
+            uint256 normalized = supply / 1e15; // Scale for math
+            calculatedPrice = BASE_PRICE + (normalized * normalized * GROWTH_FACTOR / 1e9);
+        }
+        
+        // Enforce price floor (AI agents maintain this)
+        if (priceFloor > 0 && calculatedPrice < priceFloor) {
+            return priceFloor;
+        }
+        
+        return calculatedPrice;
+    }
+    
+    /**
+     * @dev Set price floor (only owner/creator or authorized)
+     */
+    function setPriceFloor(uint256 floor) external onlyOwner {
+        priceFloor = floor;
     }
     
     /**
@@ -122,7 +148,14 @@ contract CreatorCoin is ERC20, Ownable, ReentrancyGuard {
             emit ProtocolFeeCollected(protocolFee);
         }
         
-        emit Buy(msg.sender, msg.value, tokensOut, getCurrentPrice());
+        uint256 newPrice = getCurrentPrice();
+        
+        // Track all-time high
+        if (newPrice > allTimeHigh) {
+            allTimeHigh = newPrice;
+        }
+        
+        emit Buy(msg.sender, msg.value, tokensOut, newPrice);
         return tokensOut;
     }
     
@@ -182,7 +215,7 @@ contract CreatorCoin is ERC20, Ownable, ReentrancyGuard {
     }
     
     /**
-     * @dev Get coin stats
+     * @dev Get coin stats including bonding curve data
      */
     function getStats() external view returns (
         uint256 price,
@@ -190,7 +223,9 @@ contract CreatorCoin is ERC20, Ownable, ReentrancyGuard {
         uint256 ethLocked,
         uint256 volume,
         uint256 trades,
-        uint256 marketCap
+        uint256 marketCap,
+        uint256 floor,
+        uint256 ath
     ) {
         price = getCurrentPrice();
         supply = totalSupply();
@@ -198,6 +233,29 @@ contract CreatorCoin is ERC20, Ownable, ReentrancyGuard {
         volume = totalVolume;
         trades = totalTrades;
         marketCap = (supply * price) / 1e18;
+        floor = priceFloor;
+        ath = allTimeHigh;
+    }
+    
+    /**
+     * @dev Get bonding curve info
+     */
+    function getCurveInfo() external view returns (
+        uint256 basePrice,
+        uint256 growthFactor,
+        uint256 currentPrice,
+        uint256 floor,
+        uint256 ath,
+        uint256 supply
+    ) {
+        return (
+            BASE_PRICE,
+            GROWTH_FACTOR,
+            getCurrentPrice(),
+            priceFloor,
+            allTimeHigh,
+            totalSupply()
+        );
     }
     
     // Allow contract to receive ETH
