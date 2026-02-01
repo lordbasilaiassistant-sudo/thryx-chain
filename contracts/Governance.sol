@@ -187,8 +187,7 @@ contract Governance is Ownable, ReentrancyGuard {
         uint256 againstVotes,
         uint256 startTime,
         uint256 endTime,
-        bool executed,
-        ProposalState state
+        bool executed
     ) {
         Proposal storage proposal = proposals[proposalId];
         return (
@@ -199,8 +198,7 @@ contract Governance is Ownable, ReentrancyGuard {
             proposal.againstVotes,
             proposal.startTime,
             proposal.endTime,
-            proposal.executed,
-            getProposalState(proposalId)
+            proposal.executed
         );
     }
     
