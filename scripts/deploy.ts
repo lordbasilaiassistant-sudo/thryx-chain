@@ -187,6 +187,89 @@ async function main() {
     console.log("Faucet deployment skipped:", e);
   }
 
+  // Deploy ThryxToken (Governance Token)
+  console.log("\n📦 Deploying ThryxToken (Governance Token)...");
+  let thryxTokenAddress = "";
+  try {
+    const ThryxToken = await ethers.getContractFactory("ThryxToken");
+    const thryxToken = await ThryxToken.deploy();
+    await thryxToken.waitForDeployment();
+    thryxTokenAddress = await thryxToken.getAddress();
+    console.log("ThryxToken deployed to:", thryxTokenAddress);
+    
+    // Distribute initial tokens
+    // 30% to treasury for rewards pool
+    const rewardsPool = ethers.parseEther("300000000");
+    await thryxToken.transfer(treasury.address, rewardsPool);
+    console.log("  Transferred 300M THRYX to treasury for rewards");
+  } catch (e) {
+    console.log("ThryxToken deployment skipped:", e);
+  }
+
+  // Deploy Treasury (Revenue Distribution)
+  console.log("\n📦 Deploying Treasury (Revenue Distribution)...");
+  let treasuryContractAddress = "";
+  try {
+    const Treasury = await ethers.getContractFactory("Treasury");
+    const treasuryContract = await Treasury.deploy(
+      treasury.address,  // operational wallet
+      deployer.address   // development wallet
+    );
+    await treasuryContract.waitForDeployment();
+    treasuryContractAddress = await treasuryContract.getAddress();
+    console.log("Treasury deployed to:", treasuryContractAddress);
+    
+    // Fund treasury with initial ETH
+    await deployer.sendTransaction({
+      to: treasuryContractAddress,
+      value: ethers.parseEther("10")
+    });
+    console.log("  Funded treasury with 10 ETH");
+  } catch (e) {
+    console.log("Treasury deployment skipped:", e);
+  }
+
+  // Deploy Governance
+  console.log("\n📦 Deploying Governance (On-chain Voting)...");
+  let governanceAddress = "";
+  try {
+    const Governance = await ethers.getContractFactory("Governance");
+    const governance = await Governance.deploy(
+      thryxTokenAddress || deployer.address  // THRYX token or fallback
+    );
+    await governance.waitForDeployment();
+    governanceAddress = await governance.getAddress();
+    console.log("Governance deployed to:", governanceAddress);
+  } catch (e) {
+    console.log("Governance deployment skipped:", e);
+  }
+
+  // Deploy Campaign (Event Management)
+  console.log("\n📦 Deploying Campaign (Event Management)...");
+  let campaignAddress = "";
+  try {
+    const Campaign = await ethers.getContractFactory("Campaign");
+    const campaign = await Campaign.deploy();
+    await campaign.waitForDeployment();
+    campaignAddress = await campaign.getAddress();
+    console.log("Campaign deployed to:", campaignAddress);
+    
+    // Fund campaign with initial ETH for events
+    await deployer.sendTransaction({
+      to: campaignAddress,
+      value: ethers.parseEther("5")
+    });
+    console.log("  Funded campaign with 5 ETH for events");
+    
+    // Authorize event agent (account 12)
+    if (agentSigners.length > 11) {
+      await campaign.authorizeAgent(agentSigners[11].address, true);
+      console.log("  Authorized event agent:", agentSigners[11].address);
+    }
+  } catch (e) {
+    console.log("Campaign deployment skipped:", e);
+  }
+
   // Save deployment addresses
   const deployment = {
     network: "localhost",
@@ -202,7 +285,11 @@ async function main() {
       L2WithdrawalContract: l2WithdrawalAddress || "not_deployed",
       CreatorCoinFactory: creatorCoinFactoryAddress || "not_deployed",
       BridgeBonus: bridgeBonusAddress || "not_deployed",
-      Faucet: faucetAddress || "not_deployed"
+      Faucet: faucetAddress || "not_deployed",
+      ThryxToken: thryxTokenAddress || "not_deployed",
+      Treasury: treasuryContractAddress || "not_deployed",
+      Governance: governanceAddress || "not_deployed",
+      Campaign: campaignAddress || "not_deployed"
     },
     agents: {
       oracle: agentSigners[0].address,

@@ -315,6 +315,156 @@ services:
         limits:
           memory: 512M
 
+  # ==================== Market Maker Agent ====================
+  market-maker-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-market-maker
+    command: python -u market_maker_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - MM_STATE=/app/data/market_maker_state.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ==================== Airdrop Agent ====================
+  airdrop-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-airdrop
+    command: python -u airdrop_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - AIRDROP_STATE=/app/data/airdrop_state.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ==================== Social Engagement Agent ====================
+  social-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-social
+    command: python -u social_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - SOCIAL_STATE=/app/data/social_state.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ==================== Event Scheduler Agent ====================
+  event-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-event
+    command: python -u event_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - EVENT_STATE=/app/data/event_state.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ==================== Treasury Agent ====================
+  treasury-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-treasury
+    command: python -u treasury_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - TREASURY_STATE=/app/data/treasury_state.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
   # ==================== Continuous Builder Agent (Always Building) ====================
   builder-agent:
     build:
