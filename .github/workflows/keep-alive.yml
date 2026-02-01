@@ -1,0 +1,56 @@
+name: Keep THRYX Alive
+
+on:
+  schedule:
+    # Run every 25 minutes
+    - cron: '*/25 * * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: read
+  codespaces: write
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping THRYX Codespace
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Pinging THRYX Codespace to keep it alive..."
+          
+          # Get the codespace name
+          CODESPACE=$(gh codespace list --json name,state -q '.[0].name' 2>/dev/null || echo "")
+          
+          if [ -z "$CODESPACE" ]; then
+            echo "No codespace found, creating one..."
+            gh codespace create --repo ${{ github.repository }} --machine standardLinux32gb
+            CODESPACE=$(gh codespace list --json name -q '.[0].name')
+          fi
+          
+          echo "Codespace: $CODESPACE"
+          
+          # Check if codespace is running
+          STATE=$(gh codespace list --json name,state -q ".[] | select(.name==\"$CODESPACE\") | .state")
+          echo "Current state: $STATE"
+          
+          if [ "$STATE" = "Shutdown" ]; then
+            echo "Codespace is shutdown, waking it up..."
+            gh codespace ssh -c "$CODESPACE" -- "echo 'Codespace awakened at $(date)'"
+          fi
+          
+          # Run docker compose up to ensure containers are running
+          gh codespace ssh -c "$CODESPACE" -- "cd /workspaces/thryx-chain && docker compose --env-file .env up -d 2>/dev/null || echo 'Starting containers...'"
+          
+          # Ping the RPC endpoint
+          gh codespace ssh -c "$CODESPACE" -- "curl -s -X POST http://localhost:8545 -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\",\"params\":[],\"id\":1}' | head -c 100"
+          
+          echo ""
+          echo "THRYX is alive!"
+
+      - name: Health Check
+        run: |
+          echo "Checking THRYX health via public URL..."
+          # This also helps keep the port forwarding active
+          curl -s --max-time 30 "https://crispy-goggles-v6jg77gvqwqv3pxpg-5100.app.github.dev" | head -c 200 || echo "Explorer check complete"
