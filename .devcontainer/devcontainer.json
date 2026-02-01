@@ -1,0 +1,41 @@
+{
+  "name": "THRYX Chain",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    }
+  },
+  "forwardPorts": [8545, 5100, 3000],
+  "portsAttributes": {
+    "8545": {
+      "label": "THRYX RPC",
+      "onAutoForward": "notify",
+      "visibility": "public"
+    },
+    "5100": {
+      "label": "Block Explorer",
+      "onAutoForward": "notify",
+      "visibility": "public"
+    },
+    "3000": {
+      "label": "Wallet App",
+      "onAutoForward": "notify",
+      "visibility": "public"
+    }
+  },
+  "postCreateCommand": "npm install && docker compose up -d --build",
+  "postStartCommand": "docker compose up -d",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  }
+}
