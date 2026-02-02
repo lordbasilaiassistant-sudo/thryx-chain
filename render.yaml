@@ -1,0 +1,31 @@
+# Render Blueprint for THRYX 24/7 Deployment
+# https://render.com/docs/blueprint-spec
+
+services:
+  # Core Blockchain Node
+  - type: web
+    name: thryx-node
+    runtime: docker
+    dockerfilePath: ./Dockerfile.node
+    dockerContext: .
+    healthCheckPath: /
+    plan: free
+    envVars:
+      - key: THRYX_ENV
+        value: production
+
+  # AI Agents - Combined into single service for free tier
+  - type: worker
+    name: thryx-agents
+    runtime: docker
+    dockerfilePath: ./Dockerfile.agents.combined
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: RPC_URL
+        fromService:
+          type: web
+          name: thryx-node
+          property: host
+      - key: THRYX_ENV
+        value: production

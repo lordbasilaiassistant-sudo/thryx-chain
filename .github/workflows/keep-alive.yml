@@ -1,0 +1,49 @@
+# THRYX Chain Keep-Alive Workflow
+# Keeps the codespace running 24/7 by preventing idle timeout
+
+name: THRYX Keep-Alive
+
+on:
+  # Run every 25 minutes (before 30 min idle timeout)
+  schedule:
+    - cron: '*/25 * * * *'
+  # Manual trigger
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start Codespace if Stopped
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACE_PAT }}
+        run: |
+          # Get codespace status
+          CODESPACE_NAME="crispy-goggles-v6jg77gvqwqv3pxpg"
+          
+          # Check if codespace exists and get status
+          STATUS=$(gh codespace list --json name,state -q ".[] | select(.name==\"$CODESPACE_NAME\") | .state")
+          
+          echo "Codespace status: $STATUS"
+          
+          if [ "$STATUS" = "Shutdown" ]; then
+            echo "Starting codespace..."
+            gh codespace ssh -c $CODESPACE_NAME -- "echo 'Codespace started via keep-alive'"
+          fi
+
+      - name: Ping Codespace
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACE_PAT }}
+        run: |
+          CODESPACE_NAME="crispy-goggles-v6jg77gvqwqv3pxpg"
+          
+          # Run health check command in codespace
+          gh codespace ssh -c $CODESPACE_NAME -- "curl -s http://localhost:8545 -X POST -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\",\"params\":[],\"id\":1}' || docker compose up -d"
+          
+          echo "Keep-alive ping completed at $(date)"
+
+      - name: Report Status
+        if: always()
+        run: |
+          echo "THRYX Keep-Alive completed at $(date)"
+          echo "Next run in 25 minutes"

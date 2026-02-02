@@ -1,0 +1,50 @@
+{
+  "name": "THRYX Chain",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    }
+  },
+
+  "forwardPorts": [8545, 8546, 5100, 3000, 3001, 9090],
+  
+  "portsAttributes": {
+    "8545": {
+      "label": "THRYX RPC",
+      "onAutoForward": "notify",
+      "visibility": "public"
+    },
+    "5100": {
+      "label": "Block Explorer",
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
+    }
+  },
+
+  "postCreateCommand": "npm install && pip install -r agents/requirements.txt",
+  
+  "postStartCommand": "chmod +x .devcontainer/startup.sh && .devcontainer/startup.sh",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "JuanBlanco.solidity",
+        "dbaeumer.vscode-eslint"
+      ]
+    },
+    "codespaces": {
+      "openFiles": ["docker-compose.yml"]
+    }
+  },
+
+  "remoteEnv": {
+    "THRYX_ENV": "production"
+  }
+}
