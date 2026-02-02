@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build
+cache/
+artifacts/
+typechain-types/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Vercel
+.vercel/
+
+# Misc
+*.lock.json
+bridge_*.json
+withdrawal_*.json
+pending_*.json
+security_*.json
+security_*.log
+agent_memory.json
+monitor_alerts.json
+node_modules
+node_modules
+node_modules

@@ -1,0 +1,22 @@
+# Thryx Contract Deployer
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies
+RUN apk add --no-cache python3 make g++
+
+# Copy package files
+COPY package.json package-lock.json* ./
+RUN npm ci || npm install
+
+# Copy source
+COPY hardhat.config.ts tsconfig.json ./
+COPY contracts/ ./contracts/
+COPY scripts/ ./scripts/
+
+# Compile contracts
+RUN npx hardhat compile
+
+# Wait for node to be ready, then deploy
+CMD ["sh", "-c", "echo 'Waiting for Thryx node...' && sleep 5 && npx hardhat run scripts/deploy.ts --network localhost && echo 'Deployment complete!'"]

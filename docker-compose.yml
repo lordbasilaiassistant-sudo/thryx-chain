@@ -1,0 +1,411 @@
+version: '3.8'
+
+# ============================================================
+# THRYX Mainnet - AI-Native Blockchain
+# Production Docker Stack with Monitoring
+# 
+# IMPORTANT: Create .env file from .env.example before running!
+# Run: docker-compose --env-file .env up --build
+# ============================================================
+
+services:
+  # ==================== Core Chain ====================
+  thryx-node:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: thryx-node
+    ports:
+      - "0.0.0.0:8545:8545"
+      - "0.0.0.0:8546:8546"
+    volumes:
+      - thryx-data:/app/data
+    environment:
+      - THRYX_ENV=${THRYX_ENV:-development}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8545"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    networks:
+      - thryx-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  # ==================== Contract Deployment ====================
+  deployer:
+    build:
+      context: .
+      dockerfile: Dockerfile.deployer
+    container_name: thryx-deployer
+    depends_on:
+      thryx-node:
+        condition: service_healthy
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - THRYX_ENV=${THRYX_ENV:-development}
+      - DEPLOYER_PRIVATE_KEY=${DEPLOYER_PRIVATE_KEY:-}
+    volumes:
+      - ./deployment.json:/app/deployment.json
+    networks:
+      - thryx-network
+
+  # ==================== AI Agents ====================
+  oracle-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-oracle
+    command: python -u oracle_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - THRYX_ENV=${THRYX_ENV:-development}
+      - PRIVATE_KEY_ORACLE=${PRIVATE_KEY_ORACLE:-}
+      - AGENT_MEMORY_FILE=/app/data/oracle_memory.json
+      - PROMETHEUS_ENABLED=${PROMETHEUS_ENABLED:-false}
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  arbitrage-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-arbitrage
+    command: python -u arbitrage_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - THRYX_ENV=${THRYX_ENV:-development}
+      - PRIVATE_KEY_ARBITRAGE=${PRIVATE_KEY_ARBITRAGE:-}
+      - AGENT_MEMORY_FILE=/app/data/arbitrage_memory.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  liquidity-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-liquidity
+    command: python -u liquidity_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - THRYX_ENV=${THRYX_ENV:-development}
+      - PRIVATE_KEY_LIQUIDITY=${PRIVATE_KEY_LIQUIDITY:-}
+      - AGENT_MEMORY_FILE=/app/data/liquidity_memory.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  governance-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-governance
+    command: python -u governance_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - THRYX_ENV=${THRYX_ENV:-development}
+      - PRIVATE_KEY_GOVERNANCE=${PRIVATE_KEY_GOVERNANCE:-}
+      - AGENT_MEMORY_FILE=/app/data/governance_memory.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  monitor-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-monitor
+    command: python -u monitor_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - THRYX_ENV=${THRYX_ENV:-development}
+      - PRIVATE_KEY_MONITOR=${PRIVATE_KEY_MONITOR:-}
+      - ENABLE_AUTO_REMEDIATION=true
+      - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL:-}
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  security-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-security
+    command: python -u security_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - THRYX_ENV=${THRYX_ENV:-development}
+      - PRIVATE_KEY_SECURITY=${PRIVATE_KEY_SECURITY:-}
+      - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL:-}
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  intent-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-intent
+    command: python -u intent_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - THRYX_ENV=${THRYX_ENV:-development}
+      - PRIVATE_KEY_INTENT=${PRIVATE_KEY_INTENT:-}
+      - AGENT_MEMORY_FILE=/app/data/intent_memory.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ==================== Bridge Agents ====================
+  bridge-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-bridge
+    command: python -u bridge_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - THRYX_ENV=${THRYX_ENV:-development}
+      - PRIVATE_KEY_BRIDGE=${PRIVATE_KEY_BRIDGE:-}
+      - BASE_RPC_URL=${BASE_RPC_URL:-https://mainnet.base.org}
+      - BASE_PRIVATE_KEY=${BASE_PRIVATE_KEY:-}
+      - BRIDGE_STATE_FILE=/app/data/bridge_deposit_state.json
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  withdrawal-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agents
+    container_name: thryx-withdrawal
+    command: python -u withdrawal_agent.py
+    depends_on:
+      deployer:
+        condition: service_completed_successfully
+    environment:
+      - RPC_URL=http://thryx-node:8545
+      - THRYX_ENV=${THRYX_ENV:-development}
+      - PRIVATE_KEY_WITHDRAWAL=${PRIVATE_KEY_WITHDRAWAL:-}
+      - BASE_RPC_URL=${BASE_RPC_URL:-https://mainnet.base.org}
+      - BASE_PRIVATE_KEY=${BASE_PRIVATE_KEY:-}
+    volumes:
+      - ./deployment.json:/app/deployment.json:ro
+      - agent-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.post('http://thryx-node:8545', json={'jsonrpc':'2.0','method':'eth_blockNumber','params':[],'id':1}, timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - thryx-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ==================== Block Explorer ====================
+  explorer:
+    image: nginx:alpine
+    container_name: thryx-explorer
+    depends_on:
+      thryx-node:
+        condition: service_healthy
+    volumes:
+      - ./explorer:/usr/share/nginx/html:ro
+    ports:
+      - "0.0.0.0:5100:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - thryx-network
+    restart: unless-stopped
+
+  # ==================== Monitoring Stack ====================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: thryx-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    networks:
+      - thryx-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: thryx-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    networks:
+      - thryx-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+networks:
+  thryx-network:
+    driver: bridge
+
+volumes:
+  thryx-data:
+  agent-data:
+  prometheus-data:
+  grafana-data:

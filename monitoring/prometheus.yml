@@ -1,0 +1,46 @@
+# THRYX Prometheus Configuration
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files: []
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # THRYX Node metrics
+  - job_name: 'thryx-node'
+    static_configs:
+      - targets: ['thryx-node:8545']
+    metrics_path: /metrics
+    scheme: http
+
+  # Agent metrics (when enabled)
+  - job_name: 'thryx-agents'
+    static_configs:
+      - targets:
+          - 'oracle-agent:9100'
+          - 'arbitrage-agent:9100'
+          - 'liquidity-agent:9100'
+          - 'governance-agent:9100'
+          - 'monitor-agent:9100'
+          - 'security-agent:9100'
+          - 'intent-agent:9100'
+          - 'bridge-agent:9100'
+          - 'withdrawal-agent:9100'
+    metrics_path: /metrics
+    scheme: http
+    scrape_timeout: 5s
+
+  # Docker container metrics (optional - requires cadvisor)
+  # - job_name: 'cadvisor'
+  #   static_configs:
+  #     - targets: ['cadvisor:8080']
